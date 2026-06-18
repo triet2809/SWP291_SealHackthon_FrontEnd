@@ -1,0 +1,118 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import './variables.css';
+
+/* Global Resets and Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--cf-font-family);
+  background-color: var(--cf-bg-main);
+  color: var(--cf-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--cf-text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+a {
+  color: var(--cf-brand-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--cf-brand-blue-hover);
+  text-decoration: underline;
+}
+
+p {
+  color: var(--cf-text-secondary);
+}
+
+/* React Bootstrap Overrides */
+
+/* Cards */
+.card {
+  background-color: var(--cf-bg-surface);
+  border: 1px solid var(--cf-border-color);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-sm);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: var(--cf-shadow-md);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--cf-brand-blue);
+  border-color: var(--cf-brand-blue);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--cf-radius-md);
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--cf-brand-blue-hover) !important;
+  border-color: var(--cf-brand-blue-hover) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-primary {
+  color: var(--cf-brand-blue);
+  border-color: var(--cf-brand-blue);
+  font-weight: 500;
+  border-radius: var(--cf-radius-md);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue-hover);
+  border-color: var(--cf-brand-blue-hover);
+}
+
+/* Forms */
+.form-control, .form-select {
+  border-radius: var(--cf-radius-md);
+  border: 1px solid var(--cf-border-color);
+  padding: 0.6rem 1rem;
+  color: var(--cf-text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--cf-brand-blue);
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+/* Badges */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: var(--cf-radius-md);
+}
+
+/* Progress Bars */
+.progress {
+  border-radius: 999px;
+  height: 0.5rem;
+  background-color: var(--cf-border-color);
+}
+
+.progress-bar {
+  background-color: var(--cf-status-success);
+  border-radius: 999px;
+}
