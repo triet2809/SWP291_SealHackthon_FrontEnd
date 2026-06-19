@@ -208,9 +208,9 @@ export const mentorTeamDetails = [
 ];
 
 export const mentorSubmissions = [
-  { id: 1, teamName: 'Neural Nexus', projectName: 'EduTrack AI', submittedDate: 'June 14', version: 'v0.2', status: 'Pending Review' },
-  { id: 2, teamName: 'ByteBuilders', projectName: 'SupplyChain Vista', submittedDate: 'June 13', version: 'v0.1', status: 'Reviewed' },
-  { id: 3, teamName: 'CodeCraft', projectName: 'MediConnect Pro', submittedDate: 'June 15', version: 'v0.1', status: 'Pending Review' }
+  { id: 1, teamName: 'Neural Nexus', projectName: 'EduTrack AI', submittedDate: 'June 14', version: 'v0.2', status: 'Pending Review', round: 'Preliminary'},
+  { id: 2, teamName: 'ByteBuilders', projectName: 'SupplyChain Vista', submittedDate: 'June 13', version: 'v0.1', status: 'Reviewed', round: 'Preliminary' },
+  { id: 3, teamName: 'CodeCraft', projectName: 'MediConnect Pro', submittedDate: 'June 15', version: 'v0.1', status: 'Pending Review', round: 'Final' }
 ];
 
 export const mentorFeedbackHistory = {

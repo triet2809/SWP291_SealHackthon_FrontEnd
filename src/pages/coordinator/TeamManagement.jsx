@@ -1,9 +1,47 @@
-import React from 'react';
-import { Card, Table, Button, Badge, Form, InputGroup } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Card, Table, Button, Badge, Form, InputGroup, Modal } from 'react-bootstrap';
 import { Search, Eye, Ban } from 'lucide-react';
 import { mentorAssignedTeams } from '../../data/mockData';
 
 const TeamManagement = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All Categories');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [teams, setTeams] = useState(mentorAssignedTeams);
+
+  const handleDisqualifyTeam = (id) => {
+    if (window.confirm('Disqualify this team?')) {
+      setTeams(
+        teams.map((team) =>
+          team.id === id
+            ? {
+              ...team,
+              status: 'Disqualified'
+            }
+            : team
+        )
+      );
+    }
+  };
+
+  const filteredTeams = teams.filter((team) => {
+    const matchesSearch =
+      team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      team.project.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      categoryFilter === 'All Categories' ||
+      team.category === categoryFilter;
+
+    const matchesStatus =
+      statusFilter === 'All Statuses' ||
+      team.status === statusFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
   return (
     <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -19,18 +57,20 @@ const TeamManagement = () => {
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
             </InputGroup.Text>
-            <Form.Control className="border-start-0" placeholder="Search teams..." />
+            <Form.Control className="border-start-0" placeholder="Search teams..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </InputGroup>
           <div className="d-flex gap-2">
-            <Form.Select style={{ width: '150px' }}>
+            <Form.Select style={{ width: '150px' }} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option>All Categories</option>
               <option>AI/ML</option>
               <option>Web Dev</option>
             </Form.Select>
-            <Form.Select style={{ width: '150px' }}>
+            <Form.Select style={{ width: '150px' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option>All Statuses</option>
               <option>On Track</option>
               <option>Needs Attention</option>
+              <option>At Risk</option>
+              <option>Disqualified</option>
             </Form.Select>
           </div>
         </div>
@@ -47,7 +87,7 @@ const TeamManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {mentorAssignedTeams.map((team) => (
+              {filteredTeams.map((team) => (
                 <tr key={team.id}>
                   <td className="fw-medium py-3">
                     <div className="d-flex align-items-center gap-2">
@@ -63,16 +103,19 @@ const TeamManagement = () => {
                   <td className="py-3">
                     <Badge bg={
                       team.status === 'On Track' ? 'success' :
-                      team.status === 'Needs Attention' ? 'warning' : 'danger'
+                        team.status === 'Needs Attention' ? 'warning' : 'danger'
                     } text={team.status === 'Needs Attention' ? 'dark' : 'light'}>
                       {team.status}
                     </Badge>
                   </td>
                   <td className="py-3 text-end">
-                    <Button variant="link" size="sm" className="p-0 text-primary me-3">
+                    <Button variant="link" size="sm" className="p-0 text-primary me-3" onClick={() => {
+                      setSelectedTeam(team);
+                      setShowDetailModal(true);
+                    }}>
                       <Eye size={16} />
                     </Button>
-                    <Button variant="link" size="sm" className="p-0 text-danger">
+                    <Button variant="link" size="sm" className="p-0 text-danger" onClick={() => handleDisqualifyTeam(team.id)}>
                       <Ban size={16} />
                     </Button>
                   </td>
@@ -82,6 +125,25 @@ const TeamManagement = () => {
           </Table>
         </div>
       </Card>
+      <Modal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Team Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {selectedTeam && (
+            <>
+              <p><strong>Name:</strong> {selectedTeam.name}</p>
+              <p><strong>Project:</strong> {selectedTeam.project}</p>
+              <p><strong>Category:</strong> {selectedTeam.category}</p>
+              <p><strong>Members:</strong> {selectedTeam.members}</p>
+              <p><strong>Status:</strong> {selectedTeam.status}</p>
+            </>
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

@@ -12,17 +12,26 @@ const IncidentReportDetail = () => {
   // Using the mock data for demonstration. In a real app, fetch based on 'id'
   const incident = incidentDetail;
   const [currentStatus, setCurrentStatus] = useState(incident.status);
+  const [decisionHistory, setDecisionHistory] = useState([]);
 
   const handleDecision = (newStatus) => {
     setCurrentStatus(newStatus);
+    setDecisionHistory([
+      {
+        action: `Status Updated to ${newStatus}`,
+        user: 'Coordinator',
+        date: new Date().toLocaleString()
+      },
+      ...decisionHistory
+    ]);
   };
 
   return (
     <div className="py-2">
       <div className="mb-4">
-        <Button 
-          variant="link" 
-          className="p-0 text-decoration-none d-inline-flex align-items-center gap-2 mb-3" 
+        <Button
+          variant="link"
+          className="p-0 text-decoration-none d-inline-flex align-items-center gap-2 mb-3"
           style={{ color: 'var(--cf-text-secondary)' }}
           onClick={() => navigate('/coordinator/incidents')}
         >
@@ -51,7 +60,7 @@ const IncidentReportDetail = () => {
                 <ShieldAlert size={20} className="text-warning" />
                 Incident Details
               </h5>
-              
+
               <Row className="mb-4">
                 <Col md={6}>
                   <div className="mb-3">
@@ -84,7 +93,7 @@ const IncidentReportDetail = () => {
               </Row>
 
               <hr style={{ borderColor: 'var(--cf-border-color)' }} />
-              
+
               <div className="mb-4">
                 <h6 className="fw-bold mb-2" style={{ color: 'var(--cf-text-primary)' }}>Description</h6>
                 <p style={{ color: 'var(--cf-text-secondary)', lineHeight: '1.6' }}>{incident.description}</p>
@@ -96,6 +105,22 @@ const IncidentReportDetail = () => {
                   <ExternalLink size={16} />
                   <span>View Submitted Evidence</span>
                 </a>
+              </div>
+              <div className="mt-4">
+                <h6 className="fw-bold mb-3" style={{ color: "var(--cf-text-primary)" }}>
+                  Quick Actions
+                </h6>
+                <div className="d-flex gap-2">
+                  <Button variant="warning" onClick={() => handleDecision('Under Review')} >
+                    Mark Under Review
+                  </Button>
+                  <Button variant="success" onClick={() => handleDecision('Resolved')} >
+                    Resolve
+                  </Button>
+                  <Button variant="danger" onClick={() => handleDecision('Rejected')}  >
+                    Reject Report
+                  </Button>
+                </div>
               </div>
             </Card.Body>
           </Card>
@@ -139,12 +164,23 @@ const IncidentReportDetail = () => {
                     <div style={{ fontSize: '0.75rem', color: 'var(--cf-text-secondary)' }}>{log.date} by {log.user}</div>
                   </div>
                 ))}
+                {decisionHistory.map((log, index) => (
+                  <div key={index} className="position-relative ps-3" style={{ borderLeft: '2px solid var(--cf-status-success)' }} >
+                    <div className="position-absolute rounded-circle bg-success" style={{ width: "8px", height: "8px", left: "-5px", top: "5px" }} />
+                    <div className="fw-medium mb-1 text-success" style={{ fontSize: "0.875rem" }}>
+                      {log.action}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--cf-text-secondary)" }}>
+                      {log.date} by {log.user}
+                    </div>
+                  </div>
+                ))}
                 {currentStatus !== incident.status && (
-                   <div className="position-relative ps-3" style={{ borderLeft: '2px solid var(--cf-status-success)' }}>
-                   <div className="position-absolute rounded-circle bg-success" style={{ width: '8px', height: '8px', left: '-5px', top: '5px' }}></div>
-                   <div className="fw-medium mb-1 text-success" style={{ fontSize: '0.875rem' }}>Status Updated to: {currentStatus}</div>
-                   <div style={{ fontSize: '0.75rem', color: 'var(--cf-text-secondary)' }}>Just now by You</div>
-                 </div>
+                  <div className="position-relative ps-3" style={{ borderLeft: '2px solid var(--cf-status-success)' }}>
+                    <div className="position-absolute rounded-circle bg-success" style={{ width: '8px', height: '8px', left: '-5px', top: '5px' }}></div>
+                    <div className="fw-medium mb-1 text-success" style={{ fontSize: '0.875rem' }}>Status Updated to: {currentStatus}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--cf-text-secondary)' }}>Just now by You</div>
+                  </div>
                 )}
               </div>
             </Card.Body>

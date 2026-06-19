@@ -149,3 +149,32 @@ p {
   color: var(--cf-text-primary);
   font-weight: 600;
 }
+
+.modal-content {
+  background-color: var(--cf-bg-surface);
+  color: var(--cf-text-primary);
+  border: 1px solid var(--cf-border-color);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--cf-border-color);
+}
+
+.modal-title {
+  color: var(--cf-text-primary);
+}
+
+.form-control,
+.form-select {
+  background-color: var(--cf-bg-surface) !important;
+  color: var(--cf-text-primary) !important;
+  border-color: var(--cf-border-color) !important;
+}
+
+.form-control::placeholder {
+  color: var(--cf-text-muted);
+}

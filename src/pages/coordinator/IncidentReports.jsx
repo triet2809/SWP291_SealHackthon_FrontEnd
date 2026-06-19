@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Table, Button, Badge, InputGroup, Form } from 'react-bootstrap';
 import { Search, Eye, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,29 @@ import IncidentStatusBadge from '../../components/incident/IncidentStatusBadge';
 
 const IncidentReports = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const filteredIncidents =
+    incidentsList.filter((incident) => {
+      const matchesSearch =
+        incident.team
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
 
+        incident.reporter
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+
+        incident.type
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === 'All Statuses'
+          ? true
+          : incident.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
   return (
     <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -23,10 +45,10 @@ const IncidentReports = () => {
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
             </InputGroup.Text>
-            <Form.Control className="border-start-0" placeholder="Search incidents..." />
+            <Form.Control className="border-start-0" placeholder="Search incidents..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </InputGroup>
           <div className="d-flex gap-2">
-            <Form.Select style={{ width: '150px' }}>
+            <Form.Select style={{ width: '150px' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option>All Statuses</option>
               <option>Pending Review</option>
               <option>Under Review</option>
@@ -48,7 +70,7 @@ const IncidentReports = () => {
               </tr>
             </thead>
             <tbody>
-              {incidentsList.map((incident) => (
+              {filteredIncidents.map((incident) => (
                 <tr key={incident.id} className="align-middle">
                   <td className="py-3" style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>{incident.id}</td>
                   <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>{incident.team}</td>
@@ -67,9 +89,9 @@ const IncidentReports = () => {
                     <IncidentStatusBadge status={incident.status} />
                   </td>
                   <td className="py-3 text-end">
-                    <Button 
-                      variant="primary" 
-                      size="sm" 
+                    <Button
+                      variant="primary"
+                      size="sm"
                       className="d-inline-flex align-items-center gap-1"
                       onClick={() => navigate(`/coordinator/incidents/${incident.id}`)}
                     >
