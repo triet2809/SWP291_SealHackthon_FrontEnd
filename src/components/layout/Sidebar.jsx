@@ -17,7 +17,8 @@ import {
   Bell,
   FileText,
   Star,
-  Clock
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
@@ -56,6 +57,25 @@ const Sidebar = ({ role }) => {
           { name: 'Assigned Submissions', path: '/judge/submissions', icon: FileCheck },
           { name: 'Notice Board', path: '/judge/notices', icon: Info },
           { name: 'Profile', path: '/judge/profile', icon: User },
+        ];
+      case 'coordinator':
+        return [
+          { name: 'Overview', path: '/coordinator/dashboard', icon: LayoutDashboard },
+          { name: 'Event Manage...', path: '/coordinator/events', icon: Calendar },
+          { name: 'Rounds', path: '/coordinator/rounds', icon: Clock },
+          { name: 'Categories', path: '/coordinator/categories', icon: FolderOpen },
+          { name: 'Teams', path: '/coordinator/teams', icon: Users },
+          { name: 'Submissions', path: '/coordinator/submissions', icon: Upload },
+          { name: 'Mentors', path: '/coordinator/mentors', icon: Star },
+          { name: 'Judges', path: '/coordinator/judges', icon: Award },
+          { name: 'User Approvals', path: '/coordinator/users', icon: User },
+          { name: 'Criteria', path: '/coordinator/criteria', icon: FileCheck },
+          { name: 'Rankings', path: '/coordinator/rankings', icon: Award },
+          { name: 'Awards', path: '/coordinator/awards', icon: Award },
+          { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
+          { name: 'Reports', path: '/coordinator/reports', icon: FileText },
+          { name: 'Audit Logs', path: '/coordinator/logs', icon: History },
+          { name: 'Profile', path: '/coordinator/profile', icon: User },
         ];
       default:
         return [];

@@ -40,3 +40,30 @@
   --cf-radius-lg: 0.75rem;
   --cf-radius-xl: 1rem;
 }
+
+[data-theme='dark'] {
+  /* Colors */
+  --cf-brand-blue: #3b82f6;
+  --cf-brand-blue-hover: #60a5fa;
+  --cf-brand-blue-light: #1e3a8a;
+  
+  --cf-bg-main: #0f172a;
+  --cf-bg-surface: #1e293b;
+  
+  --cf-text-primary: #f8fafc;
+  --cf-text-secondary: #cbd5e1;
+  --cf-text-muted: #64748b;
+  
+  --cf-border-color: #334155;
+  
+  /* Status Colors (Slightly adjusted for dark mode visibility) */
+  --cf-status-success: #34d399;
+  --cf-status-warning: #fbbf24;
+  --cf-status-danger: #f87171;
+  --cf-status-info: #60a5fa;
+
+  --cf-status-success-bg: rgba(16, 185, 129, 0.2);
+  --cf-status-warning-bg: rgba(245, 158, 11, 0.2);
+  --cf-status-danger-bg: rgba(239, 68, 68, 0.2);
+  --cf-status-info-bg: rgba(59, 130, 246, 0.2);
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 import { mentorSubmissions } from '../../data/mockData';
 import styles from './SubmissionReview.module.css';
 
@@ -16,8 +17,19 @@ const SubmissionReview = () => {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Submission Review</h1>
         <div className={styles.pageSubtitle}>
-          Review team submissions as a mentor
+          Review and provide feedback on team submissions
         </div>
+      </div>
+
+      <div className="d-flex justify-content-end mb-3">
+        <Button 
+          variant="outline-danger" 
+          size="sm" 
+          className="d-flex align-items-center gap-2"
+          onClick={() => navigate('/mentor/incidents/create')}
+        >
+          <AlertTriangle size={16} /> Report Incident
+        </Button>
       </div>
 
       <div className={styles.submissionList}>

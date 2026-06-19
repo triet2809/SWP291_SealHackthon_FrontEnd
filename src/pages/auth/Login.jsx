@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 import { Zap, Users, Award, Calendar, ArrowRight } from 'lucide-react';
 import { users } from '../../data/mockData';
 import styles from './Login.module.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setForceTheme } = useTheme();
+
+  useEffect(() => {
+    setForceTheme('light');
+    return () => setForceTheme(null);
+  }, [setForceTheme]);
 
   const handleDemoLogin = (role) => {
     navigate(`/${role}/dashboard`);

@@ -29,6 +29,7 @@ import SubmissionReview from '../pages/mentor/SubmissionReview';
 import FeedbackCenter from '../pages/mentor/FeedbackCenter';
 import MentorNoticeBoard from '../pages/mentor/MentorNoticeBoard';
 import MentorProfile from '../pages/mentor/MentorProfile';
+import CreateMentorIncidentReport from '../pages/mentor/CreateIncidentReport';
 
 import JudgeDashboard from '../pages/judge/JudgeDashboard';
 import AssignedSubmissions from '../pages/judge/AssignedSubmissions';
@@ -36,6 +37,26 @@ import ScoringInterface from '../pages/judge/ScoringInterface';
 import ViewEvaluation from '../pages/judge/ViewEvaluation';
 import JudgeNoticeBoard from '../pages/judge/JudgeNoticeBoard';
 import JudgeProfile from '../pages/judge/JudgeProfile';
+import CreateJudgeIncidentReport from '../pages/judge/CreateIncidentReport';
+
+// Coordinator Pages
+import CoordinatorDashboard from '../pages/coordinator/CoordinatorDashboard';
+import EventManagement from '../pages/coordinator/EventManagement';
+import RoundManagement from '../pages/coordinator/RoundManagement';
+import CategoryManagement from '../pages/coordinator/CategoryManagement';
+import TeamManagement from '../pages/coordinator/TeamManagement';
+import SubmissionManagementCoordinator from '../pages/coordinator/SubmissionManagement';
+import MentorManagement from '../pages/coordinator/MentorManagement';
+import JudgeManagementCoordinator from '../pages/coordinator/JudgeManagement';
+import UserApproval from '../pages/coordinator/UserApproval';
+import CriteriaManagement from '../pages/coordinator/CriteriaManagement';
+import RankingManagement from '../pages/coordinator/RankingManagement';
+import AwardsManagement from '../pages/coordinator/AwardsManagement';
+import IncidentReports from '../pages/coordinator/IncidentReports';
+import IncidentReportDetail from '../pages/coordinator/IncidentReportDetail';
+import Reports from '../pages/coordinator/Reports';
+import AuditLogs from '../pages/coordinator/AuditLogs';
+import CoordinatorProfile from '../pages/coordinator/CoordinatorProfile';
 
 const AppRoutes = () => {
   return (
@@ -68,6 +89,7 @@ const AppRoutes = () => {
           <Route path="review" element={<SubmissionReview />} />
           <Route path="feedback" element={<FeedbackCenter />} />
           <Route path="notices" element={<MentorNoticeBoard />} />
+          <Route path="incidents/create" element={<CreateMentorIncidentReport />} />
           <Route path="profile" element={<MentorProfile />} />
         </Route>
 
@@ -76,10 +98,33 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<JudgeDashboard />} />
           <Route path="submissions" element={<AssignedSubmissions />} />
-          <Route path="evaluate" element={<ScoringInterface />} />
-          <Route path="view-evaluation" element={<ViewEvaluation />} />
+          <Route path="score/:id" element={<ScoringInterface />} />
+          <Route path="view-evaluation/:id" element={<ViewEvaluation />} />
           <Route path="notices" element={<JudgeNoticeBoard />} />
+          <Route path="incidents/create" element={<CreateJudgeIncidentReport />} />
           <Route path="profile" element={<JudgeProfile />} />
+        </Route>
+
+        {/* Coordinator Routes */}
+        <Route path="/coordinator" element={<DashboardLayout role="coordinator" />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<CoordinatorDashboard />} />
+          <Route path="events" element={<EventManagement />} />
+          <Route path="rounds" element={<RoundManagement />} />
+          <Route path="categories" element={<CategoryManagement />} />
+          <Route path="teams" element={<TeamManagement />} />
+          <Route path="submissions" element={<SubmissionManagementCoordinator />} />
+          <Route path="mentors" element={<MentorManagement />} />
+          <Route path="judges" element={<JudgeManagementCoordinator />} />
+          <Route path="users" element={<UserApproval />} />
+          <Route path="criteria" element={<CriteriaManagement />} />
+          <Route path="rankings" element={<RankingManagement />} />
+          <Route path="awards" element={<AwardsManagement />} />
+          <Route path="incidents" element={<IncidentReports />} />
+          <Route path="incidents/:id" element={<IncidentReportDetail />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="logs" element={<AuditLogs />} />
+          <Route path="profile" element={<CoordinatorProfile />} />
         </Route>
 
         {/* Fallback */}

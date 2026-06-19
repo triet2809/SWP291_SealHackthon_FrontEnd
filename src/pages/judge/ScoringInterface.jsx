@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { File, FileText, Image, FileArchive, Video } from 'lucide-react';
+import { File, FileText, Image, FileArchive, Video, AlertTriangle } from 'lucide-react';
 import { judgeSubmissionDetails } from '../../data/mockData';
 import styles from './ScoringInterface.module.css';
 
@@ -41,6 +41,17 @@ const ScoringInterface = () => {
         <div className={styles.pageSubtitle}>
           Review materials and evaluate the submission
         </div>
+      </div>
+
+      <div className="d-flex justify-content-end mb-3">
+        <Button 
+          variant="outline-danger" 
+          size="sm" 
+          className="d-flex align-items-center gap-2"
+          onClick={() => navigate('/judge/incidents/create')}
+        >
+          <AlertTriangle size={16} /> Report Incident
+        </Button>
       </div>
 
       <Row>

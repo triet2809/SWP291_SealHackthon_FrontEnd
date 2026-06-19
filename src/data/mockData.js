@@ -32,6 +32,17 @@ export const users = {
     position: 'Professor',
     phone: '+1 (555) 214-8830',
     specialty: 'Judge · AI/ML Track'
+  },
+  coordinator: {
+    name: 'Sarah Connor',
+    email: 's.connor@fpt.edu.vn',
+    role: 'Coordinator',
+    initials: 'SC',
+    universityId: 'FPT-ADMIN-101',
+    department: 'Events',
+    position: 'Lead Event Coordinator',
+    phone: '+84 111 222 333',
+    specialty: 'Admin'
   }
 };
 
@@ -242,5 +253,36 @@ export const judgeSubmissionDetails = {
     { id: 2, name: 'Architecture_Diagram.png', size: '1.1 MB', type: 'Image' },
     { id: 3, name: 'Source_Code_v1.zip', size: '14.5 MB', type: 'Archive' },
     { id: 4, name: 'Demo_Recording.mp4', size: '45.2 MB', type: 'Video' }
+  ]
+};
+
+export const incidentsList = [
+  { id: 'IR-2026-001', team: 'Neural Nexus', reporter: 'Dr. Priya Patel', role: 'Mentor', type: 'Code Plagiarism', severity: 'High', status: 'Pending Review', date: 'June 18, 2026' },
+  { id: 'IR-2026-002', team: 'ByteBuilders', reporter: 'Prof. James Kim', role: 'Judge', type: 'Late Submission Bypass', severity: 'Medium', status: 'Under Review', date: 'June 17, 2026' },
+  { id: 'IR-2026-003', team: 'DataCraft', reporter: 'Michael Ross', role: 'Guest Judge', type: 'Inappropriate Content', severity: 'High', status: 'Warning Issued', date: 'June 16, 2026' },
+  { id: 'IR-2026-004', team: 'AlgoArts', reporter: 'Sarah Connor', role: 'Coordinator', type: 'Team Size Limit Exceeded', severity: 'Low', status: 'Resolved', date: 'June 15, 2026' }
+];
+
+export const incidentDetail = {
+  id: 'IR-2026-001',
+  event: 'SEAL Hackathon 2026',
+  round: 'Preliminary Submission',
+  category: 'AI/ML',
+  team: 'Neural Nexus',
+  submission: 'EduTrack AI v0.2',
+  incidentType: 'Code Plagiarism',
+  severity: 'High',
+  status: 'Pending Review',
+  title: 'Suspected use of pre-existing proprietary codebase',
+  description: 'Upon reviewing the submitted architecture and core inference engine for EduTrack AI, I noticed significant portions of the code match a proprietary repository owned by EduTech Corp. The implementation details, including specific variable naming conventions and custom algorithm structures, are identical. This violates the rule stating all core code must be written during the hackathon or open-source.',
+  evidenceUrl: 'https://github.com/mock-evidence/plagiarism-report',
+  reporter: {
+    name: 'Dr. Priya Patel',
+    role: 'Mentor',
+    email: 'p.patel@fpt.edu.vn',
+    date: 'June 18, 2026 - 14:30 PM'
+  },
+  auditLogs: [
+    { date: 'June 18, 2026 - 14:30 PM', action: 'Report Submitted', user: 'Dr. Priya Patel' }
   ]
 };

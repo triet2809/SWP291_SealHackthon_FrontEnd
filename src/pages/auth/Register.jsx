@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Row, Col, Form, Button } from 'react-bootstrap';
 import { Zap } from 'lucide-react';
 import loginStyles from './Login.module.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { setForceTheme } = useTheme();
   const [studentType, setStudentType] = useState('fpt'); // 'fpt' or 'external'
+
+  useEffect(() => {
+    setForceTheme('light');
+    return () => setForceTheme(null);
+  }, [setForceTheme]);
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -64,10 +71,20 @@ const Register = () => {
               </Form.Group>
 
               {studentType === 'fpt' ? (
-                <Form.Group className="mb-3">
-                  <Form.Label>FPT Student ID</Form.Label>
-                  <Form.Control type="text" placeholder="SE123456" required />
-                </Form.Group>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>FPT Student ID</Form.Label>
+                      <Form.Control type="text" placeholder="SE123456" required />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Campus Name</Form.Label>
+                      <Form.Control type="text" placeholder="e.g. Ho Chi Minh" required />
+                    </Form.Group>
+                  </Col>
+                </Row>
               ) : (
                 <Row>
                   <Col md={6}>

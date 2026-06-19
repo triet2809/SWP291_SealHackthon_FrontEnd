@@ -28,9 +28,9 @@
 }
 
 .draftAlert {
-  background-color: #fffbeb; /* light amber/yellow */
-  border: 1px solid #fef3c7;
-  color: #b45309;
+  background-color: var(--cf-status-warning-bg);
+  border: 1px solid var(--cf-status-warning);
+  color: var(--cf-text-primary);
   border-radius: var(--cf-radius-md);
   padding: 1rem 1.25rem;
   display: flex;
@@ -57,28 +57,31 @@
   padding: 0.6rem 1rem;
   font-size: 0.875rem;
   color: var(--cf-text-primary);
+  background-color: transparent;
   box-shadow: none;
 }
 
 .formControl:focus {
   border-color: var(--cf-brand-blue);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background-color: transparent;
 }
 
 .dropzone {
-  border: 1px dashed var(--cf-border-color);
+  border: 2px dashed var(--cf-text-secondary);
   border-radius: var(--cf-radius-md);
   padding: 3rem 1rem;
   text-align: center;
-  background-color: #fafafa;
+  background-color: transparent;
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 2rem;
+  opacity: 0.7;
 }
 
 .dropzone:hover {
-  background-color: var(--cf-bg-main);
-  border-color: var(--cf-text-secondary);
+  opacity: 1;
+  border-color: var(--cf-text-primary);
 }
 
 .dropzoneIcon {
@@ -87,7 +90,7 @@
 }
 
 .dropzoneTitle {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--cf-text-primary);
   margin-bottom: 0.25rem;
   font-size: 0.875rem;

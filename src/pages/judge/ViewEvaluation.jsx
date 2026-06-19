@@ -1,23 +1,29 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './ViewEvaluation.module.css';
+import { judgeAssignedSubmissions } from '../../data/mockData';
 
 const ViewEvaluation = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  // Mock static evaluation data for demonstration
+  // Find the submission based on id
+  const submission = judgeAssignedSubmissions.find(s => s.id === parseInt(id)) || judgeAssignedSubmissions[3]; // Fallback to QuantumLeap
+  
+  const scoreValue = submission.score ? parseInt(submission.score.split('/')[0]) : 84;
+
   const evalData = {
-    teamName: 'QuantumLeap',
-    project: 'TensorFlow Flow',
+    teamName: submission.teamName,
+    project: submission.project,
     scores: {
-      innovation: 88,
-      execution: 82,
-      uiux: 76,
-      practicality: 90
+      innovation: scoreValue + 4,
+      execution: scoreValue - 2,
+      uiux: scoreValue - 8,
+      practicality: scoreValue + 6
     },
-    finalScore: 84,
-    notes: "Strong machine learning foundation. The model architecture is well thought out, but the front-end user experience could use some polish to make the application more accessible to non-technical users. Good potential for real-world application."
+    finalScore: scoreValue,
+    notes: "Strong foundation. The project architecture is well thought out, but the user experience could use some polish to make the application more accessible. Good potential for real-world application."
   };
 
   return (
@@ -77,7 +83,7 @@ const ViewEvaluation = () => {
         <div className={styles.actionRow}>
           <Button 
             className={styles.reevaluateBtn}
-            onClick={() => navigate('/judge/evaluate')}
+            onClick={() => navigate(`/judge/score/${id}`)}
           >
             Re-evaluate Project
           </Button>

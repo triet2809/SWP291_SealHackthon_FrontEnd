@@ -66,14 +66,14 @@ const AssignedSubmissions = () => {
                   {submission.status === 'Pending' ? (
                     <span 
                       className={styles.actionEvaluate}
-                      onClick={() => navigate('/judge/evaluate')}
+                      onClick={() => navigate('/judge/score/' + submission.id)}
                     >
                       Evaluate &rarr;
                     </span>
                   ) : (
                     <span 
                       className={styles.actionView}
-                      onClick={() => navigate('/judge/view-evaluation')}
+                      onClick={() => navigate('/judge/view-evaluation/' + submission.id)}
                     >
                       View
                     </span>

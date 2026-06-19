@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Card, Button } from 'react-bootstrap';
 import { Clock } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const PendingApproval = () => {
+  const { setForceTheme } = useTheme();
+
+  useEffect(() => {
+    setForceTheme('light');
+    return () => setForceTheme(null);
+  }, [setForceTheme]);
   return (
     <div style={{ backgroundColor: 'var(--cf-bg-main)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Container>

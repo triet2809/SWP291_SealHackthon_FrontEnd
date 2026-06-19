@@ -1,11 +1,13 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell } from 'lucide-react';
+import { Search, Sun, Moon } from 'lucide-react';
 import styles from './Topbar.module.css';
-import { Form, InputGroup } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
+import { useTheme } from '../../context/ThemeContext';
 
 const Topbar = ({ role }) => {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   
   // Format role name for breadcrumb
   const roleName = role === 'team' ? 'Team Member' : role.charAt(0).toUpperCase() + role.slice(1);
@@ -36,9 +38,12 @@ const Topbar = ({ role }) => {
           />
         </div>
         
-        <button className={styles.notificationBtn}>
-          <Bell size={20} />
-          <span className={styles.notificationDot}></span>
+        <button 
+          className={styles.notificationBtn} 
+          onClick={toggleTheme}
+          title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
     </header>

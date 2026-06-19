@@ -1,5 +1,6 @@
 import React from 'react';
 import { Row, Col, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { FileText, CheckCircle, Tag, Star } from 'lucide-react';
 import { judgeSubmissions } from '../../data/mockData';
 import StatCard from '../../components/ui/StatCard';
@@ -8,6 +9,7 @@ import Avatar from '../../components/ui/Avatar';
 import styles from './JudgeDashboard.module.css';
 
 const JudgeDashboard = () => {
+  const navigate = useNavigate();
   return (
     <div className={styles.dashboard}>
       <div className="mb-4">
@@ -69,7 +71,10 @@ const JudgeDashboard = () => {
                       <StatusBadge type={sub.category} />
                       <StatusBadge type={sub.priority} />
                     </div>
-                    <button className={styles.reviewBtn}>
+                    <button 
+                      className={styles.reviewBtn}
+                      onClick={() => navigate('/judge/evaluate')}
+                    >
                       Review →
                     </button>
                   </div>
