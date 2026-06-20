@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Modal } from 'react-bootstrap';
-import { Search, Eye, Ban } from 'lucide-react';
+import { Search, Eye, Ban, Plus } from 'lucide-react';
 import { mentorAssignedTeams } from '../../data/mockData';
+import { useNavigate } from 'react-router-dom';
 
 const TeamManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -49,6 +51,13 @@ const TeamManagement = () => {
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Team Management</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>View and manage registered teams</div>
         </div>
+        <Button 
+          variant="primary" 
+          className="d-flex align-items-center gap-2"
+          onClick={() => navigate('/coordinator/teams/record')}
+        >
+          <Plus size={18} /> Add New Team
+        </Button>
       </div>
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>

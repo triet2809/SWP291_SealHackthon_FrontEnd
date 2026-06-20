@@ -34,8 +34,9 @@ const Sidebar = ({ role }) => {
       case 'team':
         return [
           { name: 'Overview', path: '/team/dashboard', icon: LayoutDashboard },
+          { name: 'Track Topic', path: '/team/topic', icon: FileText },
           { name: 'My Team', path: '/team/my-team', icon: Users },
-          { name: 'Team Members', path: '/team/members', icon: Users }, // Assuming this based on screenshot "Team Members" under "My Team"? Actually it's just "Team Members"
+          { name: 'Team Members', path: '/team/members', icon: Users },
           { name: 'Submission Manage...', path: '/team/submissions', icon: Upload },
           { name: 'Submission History', path: '/team/history', icon: History },
           { name: 'Notice Board', path: '/team/notices', icon: Bell },

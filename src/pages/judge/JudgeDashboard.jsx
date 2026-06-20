@@ -73,7 +73,7 @@ const JudgeDashboard = () => {
                     </div>
                     <button 
                       className={styles.reviewBtn}
-                      onClick={() => navigate('/judge/evaluate')}
+                      onClick={() => navigate(`/judge/score/${sub.id}`)}
                     >
                       Review →
                     </button>

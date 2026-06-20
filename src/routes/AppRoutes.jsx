@@ -11,6 +11,7 @@ import PendingApproval from '../pages/auth/PendingApproval';
 
 // Team Pages
 import TeamDashboard from '../pages/team/TeamDashboard';
+import TrackTopic from '../pages/team/TrackTopic';
 import MyTeam from '../pages/team/MyTeam';
 import TeamMembers from '../pages/team/TeamMembers';
 import SubmissionManagement from '../pages/team/SubmissionManagement';
@@ -45,6 +46,7 @@ import EventManagement from '../pages/coordinator/EventManagement';
 import RoundManagement from '../pages/coordinator/RoundManagement';
 import CategoryManagement from '../pages/coordinator/CategoryManagement';
 import TeamManagement from '../pages/coordinator/TeamManagement';
+import RecordTeam from '../pages/coordinator/RecordTeam';
 import SubmissionManagementCoordinator from '../pages/coordinator/SubmissionManagement';
 import MentorManagement from '../pages/coordinator/MentorManagement';
 import JudgeManagementCoordinator from '../pages/coordinator/JudgeManagement';
@@ -70,6 +72,7 @@ const AppRoutes = () => {
         <Route path="/team" element={<DashboardLayout role="team" />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<TeamDashboard />} />
+          <Route path="topic" element={<TrackTopic />} />
           <Route path="my-team" element={<MyTeam />} />
           <Route path="members" element={<TeamMembers />} />
           <Route path="submissions" element={<SubmissionManagement />} />
@@ -113,6 +116,7 @@ const AppRoutes = () => {
           <Route path="rounds" element={<RoundManagement />} />
           <Route path="categories" element={<CategoryManagement />} />
           <Route path="teams" element={<TeamManagement />} />
+          <Route path="teams/record" element={<RecordTeam />} />
           <Route path="submissions" element={<SubmissionManagementCoordinator />} />
           <Route path="mentors" element={<MentorManagement />} />
           <Route path="judges" element={<JudgeManagementCoordinator />} />

@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { File, FileText, Image, FileArchive, Video, AlertTriangle } from 'lucide-react';
-import { judgeSubmissionDetails } from '../../data/mockData';
+import { judgeSubmissionDetails, judgeAssignedSubmissions } from '../../data/mockData';
 import styles from './ScoringInterface.module.css';
 
 const ScoringInterface = () => {
   const navigate = useNavigate();
-  const details = judgeSubmissionDetails;
+  const { id } = useParams();
+  
+  // Find the basic submission info
+  const submissionInfo = judgeAssignedSubmissions.find(s => s.id === parseInt(id)) || judgeAssignedSubmissions[0];
+  
+  // Overlay the dynamic info onto the detailed mock data
+  const details = {
+    ...judgeSubmissionDetails,
+    teamName: submissionInfo.teamName || submissionInfo.team,
+    project: submissionInfo.project
+  };
   
   // State for the 4 criteria
   const [innovation, setInnovation] = useState(0);

@@ -286,3 +286,22 @@ export const incidentDetail = {
     { date: 'June 18, 2026 - 14:30 PM', action: 'Report Submitted', user: 'Dr. Priya Patel' }
   ]
 };
+
+export const trackTopicDetails = {
+  theme: "AI for Social Good",
+  track: "AI/ML",
+  description: "Leverage Artificial Intelligence and Machine Learning to build solutions that address pressing social, environmental, or educational challenges. Your project should demonstrate a clear positive impact on the community.",
+  requirements: [
+    "Core logic must utilize an AI/ML model (e.g., NLP, Computer Vision, Predictive Analytics).",
+    "Model training or fine-tuning must be documented.",
+    "Must include a working prototype (web or mobile interface) to interact with the model.",
+    "Source code must be submitted via a public or private GitHub repository.",
+    "A 3-minute video demonstration is required for the final submission."
+  ],
+  evaluationCriteria: [
+    { name: "Innovation", weight: "25%", description: "Originality of the idea and approach to solving the problem." },
+    { name: "Technical Execution", weight: "35%", description: "Quality of the code, model accuracy, and robustness of the implementation." },
+    { name: "UI/UX", weight: "20%", description: "Ease of use, accessibility, and visual design of the prototype." },
+    { name: "Impact & Practicality", weight: "20%", description: "Real-world applicability and potential social impact of the solution." }
+  ]
+};
