@@ -1,45 +1,23 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Modal } from 'react-bootstrap';
-import { Search, Mail, Edit } from 'lucide-react';
+import { Search, Mail, Edit, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const MentorManagement = () => {
+  const navigate = useNavigate();
   const [mentors, setMentors] = useState([
-    { id: 1, name: 'Dr. Priya Patel', email: 'p.patel@fpt.edu.vn', category: 'AI/ML', teamsAssigned: 3, status: 'Active' },
-    { id: 2, name: 'Marcus Wright', email: 'm.wright@industry.com', category: 'Web Dev', teamsAssigned: 4, status: 'Active' },
-    { id: 3, name: 'Sarah Lee', email: 's.lee@startup.io', category: 'Data Science', teamsAssigned: 2, status: 'Inactive' },
+    { id: 1, name: 'Dr. Priya Patel', email: 'p.patel@fpt.edu.vn', category: 'AI/ML', assignedTeams: ['Neural Nexus', 'CodeCraft', 'ByteBuilders'], status: 'Active' },
+    { id: 2, name: 'Marcus Wright', email: 'm.wright@industry.com', category: 'Web Dev', assignedTeams: ['CloudNative', 'DataCraft'], status: 'Active' },
+    { id: 3, name: 'Sarah Lee', email: 's.lee@startup.io', category: 'Data Science', assignedTeams: ['PredictIt', 'Visionary'], status: 'Inactive' },
   ]);
-
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editingMentor, setEditingMentor] = useState(null);
-  const [newMentor, setNewMentor] = useState({
-    name: '',
-    email: '',
-    category: '',
-    status: 'Active'
-  });
 
   const filteredMentors = mentors.filter((mentor) =>
     mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mentor.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSaveMentor = () => {
-    if (!newMentor.name || !newMentor.email || !newMentor.category || !newMentor.status) {
-      alert('Please fill all fields');
-      return;
-    }
 
-    if (editingMentor) {
-      setMentors(mentors.map((m) => m.id === editingMentor.id ? { ...editingMentor, ...newMentor } : m));
-    } else {
-      setMentors([...mentors, { id: Date.now(), ...newMentor, teamsAssigned: 0 }]);
-    }
-
-    setEditingMentor(null);
-    setNewMentor({ name: '', email: '', category: '', status: 'Active' });
-    setShowModal(false);
-  };
 
   return (
     <div className="py-2">
@@ -50,11 +28,7 @@ const MentorManagement = () => {
         </div>
         <Button
           variant="primary"
-          onClick={() => {
-            setEditingMentor(null);
-            setNewMentor({ name: '', email: '', category: '', status: 'Active' });
-            setShowModal(true);
-          }}
+          onClick={() => navigate('/coordinator/mentors/new')}
         >
           Invite Mentor
         </Button>
@@ -81,7 +55,7 @@ const MentorManagement = () => {
                 <th className="border-top-0 border-bottom">Name</th>
                 <th className="border-top-0 border-bottom">Email</th>
                 <th className="border-top-0 border-bottom">Category</th>
-                <th className="border-top-0 border-bottom">Teams Assigned</th>
+                <th className="border-top-0 border-bottom">Assigned Teams</th>
                 <th className="border-top-0 border-bottom">Status</th>
                 <th className="border-top-0 border-bottom text-end">Actions</th>
               </tr>
@@ -93,7 +67,11 @@ const MentorManagement = () => {
                   <td className="py-3" style={{ color: 'var(--cf-text-secondary)' }}>{mentor.email}</td>
                   <td className="py-3">{mentor.category}</td>
                   <td className="py-3">
-                    <Badge bg="info" pill>{mentor.teamsAssigned}</Badge>
+                    <div className="d-flex flex-wrap gap-1">
+                      {mentor.assignedTeams && mentor.assignedTeams.map((team, idx) => (
+                        <Badge key={idx} bg="info" text="dark">{team}</Badge>
+                      ))}
+                    </div>
                   </td>
                   <td className="py-3">
                     <Badge bg={mentor.status === 'Active' ? 'success' : 'secondary'}>{mentor.status}</Badge>
@@ -110,17 +88,16 @@ const MentorManagement = () => {
                     <Button
                       variant="link"
                       size="sm"
+                      className="p-0 text-success me-3"
+                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/assign`)}
+                    >
+                      <UserPlus size={16} />
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="sm"
                       className="p-0 text-primary"
-                      onClick={() => {
-                        setEditingMentor(mentor);
-                        setNewMentor({
-                          name: mentor.name,
-                          email: mentor.email,
-                          category: mentor.category,
-                          status: mentor.status
-                        });
-                        setShowModal(true);
-                      }}
+                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/edit`)}
                     >
                       <Edit size={16} />
                     </Button>
@@ -132,60 +109,6 @@ const MentorManagement = () => {
         </div>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingMentor ? 'Edit Mentor' : 'Invite Mentor'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                value={newMentor.name}
-                onChange={(e) => setNewMentor({ ...newMentor, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={newMentor.email}
-                onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Select
-                value={newMentor.category}
-                onChange={(e) => setNewMentor({ ...newMentor, category: e.target.value })}
-              >
-                <option value="">Select Category</option>
-                <option>AI/ML</option>
-                <option>Web Dev</option>
-                <option>Data Science</option>
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={newMentor.status}
-                onChange={(e) => setNewMentor({ ...newMentor, status: e.target.value })}
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSaveMentor}>
-            {editingMentor ? 'Update Mentor' : 'Invite Mentor'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge } from 'react-bootstrap';
-import { Plus, Trash2, Users, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Users, Save, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const RecordTeam = () => {
@@ -30,7 +30,7 @@ const RecordTeam = () => {
   };
 
   const addMember = () => {
-    if (members.length < 5) {
+    if (members.length < 4) {
       setMembers([...members, { 
         id: Date.now(), 
         name: '', 
@@ -147,9 +147,9 @@ const RecordTeam = () => {
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <h5 className="fw-bold mb-0" style={{ color: 'var(--cf-text-primary)' }}>
-                    Team Members ({members.length}/5)
+                    Team Members ({members.length}/4)
                   </h5>
-                  {members.length < 5 && (
+                  {members.length < 4 && (
                     <Button 
                       variant="outline-primary" 
                       size="sm" 
@@ -160,6 +160,13 @@ const RecordTeam = () => {
                     </Button>
                   )}
                 </div>
+
+                {members.length < 4 && (
+                  <Alert variant="warning" className="py-2 mb-4 d-flex align-items-center gap-2" style={{ fontSize: '0.875rem' }}>
+                    <AlertTriangle size={16} />
+                    <strong>Warning:</strong> Teams with fewer than 4 contestants will be flagged for potential disqualification.
+                  </Alert>
+                )}
 
                 <div className="d-flex flex-column gap-3">
                   {members.map((member, index) => (

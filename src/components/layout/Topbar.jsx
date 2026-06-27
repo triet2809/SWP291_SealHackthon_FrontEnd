@@ -16,6 +16,13 @@ const Topbar = ({ role }) => {
   const pathParts = location.pathname.split('/').filter(Boolean);
   let pageNameRaw = pathParts[pathParts.length - 1] || 'Overview';
   
+  if (!isNaN(pageNameRaw) && pathParts.length > 1) {
+    // If it's an ID, use the parent entity name
+    const parentEntity = pathParts[pathParts.length - 2];
+    const singularEntity = parentEntity.endsWith('s') ? parentEntity.slice(0, -1) : parentEntity;
+    pageNameRaw = `${singularEntity}-details`;
+  }
+  
   if (pageNameRaw.toLowerCase() === 'dashboard') {
     pageNameRaw = 'Overview';
   }

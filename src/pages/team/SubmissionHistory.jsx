@@ -1,10 +1,12 @@
 import React from 'react';
-import { Card, Table } from 'react-bootstrap';
-import { Download } from 'lucide-react';
+import { Card, Table, Button } from 'react-bootstrap';
+import { Download, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { submissionHistoryList, teamData } from '../../data/mockData';
 import styles from './SubmissionHistory.module.css';
 
 const SubmissionHistory = () => {
+  const navigate = useNavigate();
   return (
     <div className="py-2">
       <div className={styles.pageHeader}>
@@ -46,9 +48,14 @@ const SubmissionHistory = () => {
                     <span className={styles.statusBadge}>{submission.status}</span>
                   </td>
                   <td className={styles.tableCell}>
-                    <button className={styles.downloadBtn}>
-                      <Download size={16} /> Download
-                    </button>
+                    <div className="d-flex align-items-center gap-2">
+                      <button className={styles.downloadBtn}>
+                        <Download size={16} /> Download
+                      </button>
+                      <Button variant="link" size="sm" className="p-0 text-primary ms-2" onClick={() => navigate(`/team/history/${submission.id}`)}>
+                        <Eye size={18} />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

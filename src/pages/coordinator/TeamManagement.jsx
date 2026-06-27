@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Modal } from 'react-bootstrap';
-import { Search, Eye, Ban, Plus } from 'lucide-react';
+import { Search, Eye, Ban, Plus, Shuffle } from 'lucide-react';
 import { mentorAssignedTeams } from '../../data/mockData';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,10 +9,11 @@ const TeamManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const [teams, setTeams] = useState(mentorAssignedTeams);
+  
+  // Add 'track' property to mock data if it doesn't exist
+  const [teams, setTeams] = useState(mentorAssignedTeams.map(t => ({...t, track: t.track || 'Unassigned'})));
 
+  // Removed track generation logic
   const handleDisqualifyTeam = (id) => {
     if (window.confirm('Disqualify this team?')) {
       setTeams(
@@ -51,13 +52,15 @@ const TeamManagement = () => {
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Team Management</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>View and manage registered teams</div>
         </div>
-        <Button 
-          variant="primary" 
-          className="d-flex align-items-center gap-2"
-          onClick={() => navigate('/coordinator/teams/record')}
-        >
-          <Plus size={18} /> Add New Team
-        </Button>
+        <div className="d-flex gap-2">
+          <Button 
+            variant="primary" 
+            className="d-flex align-items-center gap-2"
+            onClick={() => navigate('/coordinator/teams/record')}
+          >
+            <Plus size={18} /> Add New Team
+          </Button>
+        </div>
       </div>
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -90,6 +93,7 @@ const TeamManagement = () => {
                 <th className="border-top-0 border-bottom">Team Name</th>
                 <th className="border-top-0 border-bottom">Project</th>
                 <th className="border-top-0 border-bottom">Category</th>
+                <th className="border-top-0 border-bottom">Track / Group</th>
                 <th className="border-top-0 border-bottom">Members</th>
                 <th className="border-top-0 border-bottom">Status</th>
                 <th className="border-top-0 border-bottom text-end">Actions</th>
@@ -107,26 +111,27 @@ const TeamManagement = () => {
                     </div>
                   </td>
                   <td className="py-3">{team.project}</td>
-                  <td className="py-3">{team.category}</td>
-                  <td className="py-3">{team.members}</td>
-                  <td className="py-3">
+                  <td><Badge bg="secondary">{team.category}</Badge></td>
+                  <td><Badge bg="info" text="dark">{team.track}</Badge></td>
+                  <td>{team.members}/4</td>
+                  <td>
                     <Badge bg={
                       team.status === 'On Track' ? 'success' :
-                        team.status === 'Needs Attention' ? 'warning' : 'danger'
-                    } text={team.status === 'Needs Attention' ? 'dark' : 'light'}>
+                      team.status === 'Needs Attention' ? 'warning' :
+                      team.status === 'Disqualified' ? 'danger' : 'danger'
+                    }>
                       {team.status}
                     </Badge>
                   </td>
-                  <td className="py-3 text-end">
-                    <Button variant="link" size="sm" className="p-0 text-primary me-3" onClick={() => {
-                      setSelectedTeam(team);
-                      setShowDetailModal(true);
-                    }}>
-                      <Eye size={16} />
-                    </Button>
-                    <Button variant="link" size="sm" className="p-0 text-danger" onClick={() => handleDisqualifyTeam(team.id)}>
-                      <Ban size={16} />
-                    </Button>
+                  <td className="text-end">
+                    <div className="d-flex justify-content-end gap-2">
+                      <Button variant="outline-primary" size="sm" onClick={() => navigate(`/coordinator/teams/${team.id}`)}>
+                        <Eye size={14} />
+                      </Button>
+                      <Button variant="outline-danger" size="sm" onClick={() => handleDisqualifyTeam(team.id)}>
+                        <Ban size={14} />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -134,25 +139,6 @@ const TeamManagement = () => {
           </Table>
         </div>
       </Card>
-      <Modal
-        show={showDetailModal}
-        onHide={() => setShowDetailModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Team Details</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          {selectedTeam && (
-            <>
-              <p><strong>Name:</strong> {selectedTeam.name}</p>
-              <p><strong>Project:</strong> {selectedTeam.project}</p>
-              <p><strong>Category:</strong> {selectedTeam.category}</p>
-              <p><strong>Members:</strong> {selectedTeam.members}</p>
-              <p><strong>Status:</strong> {selectedTeam.status}</p>
-            </>
-          )}
-        </Modal.Body>
-      </Modal>
     </div>
   );
 };

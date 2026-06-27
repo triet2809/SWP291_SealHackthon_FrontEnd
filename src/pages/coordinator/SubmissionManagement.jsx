@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Badge, Form, InputGroup, Modal } from 'react-bootstrap';
+import { Card, Table, Button, Badge, Form, InputGroup } from 'react-bootstrap';
 import { Search, Download, Eye } from 'lucide-react';
 import { mentorSubmissions } from '../../data/mockData';
+import { useNavigate } from 'react-router-dom';
 
 const SubmissionManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
-
   const [submissions] = useState(mentorSubmissions);
-
-  const [showModal, setShowModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
 
   const filteredSubmissions = submissions.filter((sub) => {
@@ -72,12 +71,14 @@ const SubmissionManagement = () => {
                       {sub.status}
                     </Badge>
                   </td>
-                  <td className="py-3 text-end">
-                    <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => {
-                      setSelectedSubmission(sub);
-                      setShowModal(true);
-                    }}>
-                      <Eye size={16} />
+                  <td className="text-end">
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="p-0 text-primary" 
+                      onClick={() => navigate(`/coordinator/submissions/${sub.id}`)}
+                    >
+                      <Eye size={18} />
                     </Button>
                   </td>
                 </tr>
@@ -86,50 +87,6 @@ const SubmissionManagement = () => {
           </Table>
         </div>
       </Card>
-      <Modal
-        show={showModal}
-        onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Submission Detail</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedSubmission && (
-            <>
-              <p>
-                <strong>Team:</strong>{' '}
-                {selectedSubmission.teamName}
-              </p>
-              <p>
-                <strong>Project:</strong>{' '}
-                {selectedSubmission.projectName}
-              </p>
-              <p>
-                <strong>Version:</strong>{' '}
-                {selectedSubmission.version}
-              </p>
-              <p>
-                <strong>Round:</strong>{' '}
-                {selectedSubmission.round}
-              </p>
-              <p>
-                <strong>Submitted:</strong>{' '}
-                {selectedSubmission.submittedDate}
-              </p>
-              <p>
-                <strong>Status:</strong>{' '}
-                {selectedSubmission.status}
-              </p>
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

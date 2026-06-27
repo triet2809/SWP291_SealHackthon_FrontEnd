@@ -12,13 +12,15 @@ import {
   FolderOpen,
   MessageSquare,
   FileCheck,
+  UserPlus,
   Award,
   Zap,
   Bell,
   FileText,
   Star,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  BarChart2
 } from 'lucide-react';
 import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
@@ -29,6 +31,7 @@ const Sidebar = ({ role }) => {
   const user = users[role];
 
   // Define links based on role
+
   const getLinks = () => {
     switch(role) {
       case 'team':
@@ -37,11 +40,20 @@ const Sidebar = ({ role }) => {
           { name: 'Track Topic', path: '/team/topic', icon: FileText },
           { name: 'My Team', path: '/team/my-team', icon: Users },
           { name: 'Team Members', path: '/team/members', icon: Users },
+          { name: 'Team Chat', path: '/team/chat', icon: MessageSquare },
           { name: 'Submission Manage...', path: '/team/submissions', icon: Upload },
           { name: 'Submission History', path: '/team/history', icon: History },
           { name: 'Notice Board', path: '/team/notices', icon: Bell },
           { name: 'Deadlines & Schedule', path: '/team/schedule', icon: Calendar },
+          { name: 'Support Ticket', path: '/team/support', icon: MessageSquare },
           { name: 'Profile', path: '/team/profile', icon: User },
+        ];
+      case 'student':
+        return [
+          { name: 'Overview', path: '/student/dashboard', icon: LayoutDashboard },
+          { name: 'Create Team', path: '/student/create-team', icon: Users },
+          { name: 'Join Team', path: '/student/join-team', icon: UserPlus },
+          { name: 'Profile', path: '/student/profile', icon: User },
         ];
       case 'mentor':
         return [
@@ -63,15 +75,14 @@ const Sidebar = ({ role }) => {
         return [
           { name: 'Overview', path: '/coordinator/dashboard', icon: LayoutDashboard },
           { name: 'Event Manage...', path: '/coordinator/events', icon: Calendar },
-          { name: 'Rounds', path: '/coordinator/rounds', icon: Clock },
-          { name: 'Categories', path: '/coordinator/categories', icon: FolderOpen },
           { name: 'Teams', path: '/coordinator/teams', icon: Users },
           { name: 'Submissions', path: '/coordinator/submissions', icon: Upload },
           { name: 'Mentors', path: '/coordinator/mentors', icon: Star },
           { name: 'Judges', path: '/coordinator/judges', icon: Award },
           { name: 'User Approvals', path: '/coordinator/users', icon: User },
           { name: 'Criteria', path: '/coordinator/criteria', icon: FileCheck },
-          { name: 'Rankings', path: '/coordinator/rankings', icon: Award },
+          { name: 'Scoring Analytics', path: '/coordinator/scoring', icon: BarChart2 },
+          { name: 'Rankings', path: '/coordinator/ranking', icon: Award },
           { name: 'Awards', path: '/coordinator/awards', icon: Award },
           { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
           { name: 'Reports', path: '/coordinator/reports', icon: FileText },

@@ -2,7 +2,7 @@ export const users = {
   team: {
     name: 'Alex Chen',
     email: 'alex.chen@fpt.edu.vn',
-    role: 'Team Member',
+    role: 'Team Leader',
     teamName: 'Neural Nexus',
     initials: 'AC',
     universityId: 'FPT-2026-0472',
@@ -10,6 +10,18 @@ export const users = {
     yearOfStudy: '4th Year Undergraduate',
     phone: '+84 123 456 789',
     teamRole: 'Team Lead'
+  },
+  student: {
+    name: 'Emily Davis',
+    email: 'emily.d@fpt.edu.vn',
+    role: 'Student',
+    teamName: 'None',
+    initials: 'ED',
+    universityId: 'FPT-2026-0899',
+    department: 'Software Engineering',
+    yearOfStudy: '2nd Year Undergraduate',
+    phone: '+84 111 222 333',
+    teamRole: 'Participant'
   },
   mentor: {
     name: 'Dr. Priya Patel',
@@ -228,13 +240,42 @@ export const mentorFeedbackHistory = {
 };
 
 export const judgeAssignedSubmissions = [
-  { id: 1, teamName: 'Neural Nexus', initials: 'N', project: 'EduTrack AI', category: 'AI/ML', submitted: 'June 14', status: 'Pending', score: null },
-  { id: 2, teamName: 'DataForge', initials: 'D', project: 'PredictIt Analytics', category: 'Data Science', submitted: 'June 13', status: 'Pending', score: null },
-  { id: 3, teamName: 'MLMasters', initials: 'M', project: 'NeuralVision CV', category: 'AI/ML', submitted: 'June 14', status: 'Pending', score: null },
-  { id: 4, teamName: 'QuantumLeap', initials: 'Q', project: 'TensorFlow Flow', category: 'AI/ML', submitted: 'June 12', status: 'Completed', score: '84/100' },
-  { id: 5, teamName: 'DataCraft', initials: 'D', project: 'InsightHub', category: 'Data Science', submitted: 'June 11', status: 'Completed', score: '91/100' },
-  { id: 6, teamName: 'ByteWave', initials: 'B', project: 'DataStream Pro', category: 'Data Science', submitted: 'June 13', status: 'Pending', score: null },
-  { id: 7, teamName: 'AlgoArts', initials: 'A', project: 'GraphMinds', category: 'AI/ML', submitted: 'June 14', status: 'Completed', score: '76/100' },
+  {
+    id: 1,
+    teamName: 'Neural Nexus',
+    initials: 'NN',
+    project: 'EduTrack AI',
+    category: 'AI/ML',
+    track: 'AI/ML Track A',
+    round: 'Finals',
+    submitted: 'June 18, 2026',
+    status: 'Pending',
+    score: null,
+  },
+  {
+    id: 2,
+    teamName: 'DataCraft',
+    initials: 'DC',
+    project: 'Predictive Analytics Engine',
+    category: 'Data Science',
+    track: 'Data Track B',
+    round: 'Finals',
+    submitted: 'June 17, 2026',
+    status: 'Completed',
+    score: 85,
+  },
+  {
+    id: 3,
+    teamName: 'ByteBuilders',
+    initials: 'BB',
+    project: 'Campus Connect',
+    category: 'Web Dev',
+    track: 'Web Track A',
+    round: 'Finals',
+    submitted: 'June 16, 2026',
+    status: 'Completed',
+    score: 92,
+  },
 ];
 
 export const judgeSubmissionDetails = {

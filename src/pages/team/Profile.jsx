@@ -1,10 +1,13 @@
 import React from 'react';
 import { Card, Form, Row, Col, Button } from 'react-bootstrap';
+import { useLocation } from 'react-router-dom';
 import { users } from '../../data/mockData';
 import styles from './Profile.module.css';
 
 const Profile = () => {
-  const user = users.team;
+  const location = useLocation();
+  const isStudent = location.pathname.includes('/student');
+  const user = isStudent ? users.student : users.team;
 
   return (
     <div className="py-2">

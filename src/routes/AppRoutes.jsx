@@ -9,9 +9,14 @@ import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import PendingApproval from '../pages/auth/PendingApproval';
 
+// Student Pages
+import StudentDashboard from '../pages/student/StudentDashboard';
+
 // Team Pages
 import TeamDashboard from '../pages/team/TeamDashboard';
 import TrackTopic from '../pages/team/TrackTopic';
+import CreateTeam from '../pages/team/CreateTeam';
+import JoinTeam from '../pages/team/JoinTeam';
 import MyTeam from '../pages/team/MyTeam';
 import TeamMembers from '../pages/team/TeamMembers';
 import SubmissionManagement from '../pages/team/SubmissionManagement';
@@ -19,6 +24,9 @@ import SubmissionHistory from '../pages/team/SubmissionHistory';
 import NoticeBoard from '../pages/team/NoticeBoard';
 import DeadlinesSchedule from '../pages/team/DeadlinesSchedule';
 import Profile from '../pages/team/Profile';
+import SupportTicket from '../pages/team/SupportTicket';
+import TeamScoreDetails from '../pages/team/TeamScoreDetails';
+import TeamChat from '../pages/team/TeamChat';
 import ComingSoon from '../pages/ComingSoon';
 
 // Mentor Pages
@@ -43,22 +51,30 @@ import CreateJudgeIncidentReport from '../pages/judge/CreateIncidentReport';
 // Coordinator Pages
 import CoordinatorDashboard from '../pages/coordinator/CoordinatorDashboard';
 import EventManagement from '../pages/coordinator/EventManagement';
-import RoundManagement from '../pages/coordinator/RoundManagement';
-import CategoryManagement from '../pages/coordinator/CategoryManagement';
+import EventDetails from '../pages/coordinator/EventDetails';
 import TeamManagement from '../pages/coordinator/TeamManagement';
+import TeamDetail from '../pages/coordinator/TeamDetail';
 import RecordTeam from '../pages/coordinator/RecordTeam';
 import SubmissionManagementCoordinator from '../pages/coordinator/SubmissionManagement';
 import MentorManagement from '../pages/coordinator/MentorManagement';
+import MentorAssign from '../pages/coordinator/MentorAssign';
+import MentorForm from '../pages/coordinator/MentorForm';
 import JudgeManagementCoordinator from '../pages/coordinator/JudgeManagement';
+import JudgeAssign from '../pages/coordinator/JudgeAssign';
+import JudgeForm from '../pages/coordinator/JudgeForm';
 import UserApproval from '../pages/coordinator/UserApproval';
 import CriteriaManagement from '../pages/coordinator/CriteriaManagement';
 import RankingManagement from '../pages/coordinator/RankingManagement';
+import RankingDetail from '../pages/coordinator/RankingDetail';
+import ScoringAnalytics from '../pages/coordinator/ScoringAnalytics';
 import AwardsManagement from '../pages/coordinator/AwardsManagement';
+import AwardForm from '../pages/coordinator/AwardForm';
 import IncidentReports from '../pages/coordinator/IncidentReports';
 import IncidentReportDetail from '../pages/coordinator/IncidentReportDetail';
 import Reports from '../pages/coordinator/Reports';
 import AuditLogs from '../pages/coordinator/AuditLogs';
 import CoordinatorProfile from '../pages/coordinator/CoordinatorProfile';
+import SubmissionDetail from '../pages/coordinator/SubmissionDetail';
 
 const AppRoutes = () => {
   return (
@@ -68,6 +84,15 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
         
+        {/* Student Routes */}
+        <Route path="/student" element={<DashboardLayout role="student" />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="create-team" element={<CreateTeam />} />
+          <Route path="join-team" element={<JoinTeam />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+
         {/* Team Routes */}
         <Route path="/team" element={<DashboardLayout role="team" />}>
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -75,10 +100,13 @@ const AppRoutes = () => {
           <Route path="topic" element={<TrackTopic />} />
           <Route path="my-team" element={<MyTeam />} />
           <Route path="members" element={<TeamMembers />} />
+          <Route path="chat" element={<TeamChat />} />
           <Route path="submissions" element={<SubmissionManagement />} />
           <Route path="history" element={<SubmissionHistory />} />
+          <Route path="history/:id" element={<TeamScoreDetails />} />
           <Route path="notices" element={<NoticeBoard />} />
           <Route path="schedule" element={<DeadlinesSchedule />} />
+          <Route path="support" element={<SupportTicket />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
@@ -113,17 +141,28 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<CoordinatorDashboard />} />
           <Route path="events" element={<EventManagement />} />
-          <Route path="rounds" element={<RoundManagement />} />
-          <Route path="categories" element={<CategoryManagement />} />
+          <Route path="events/:id" element={<EventDetails />} />
           <Route path="teams" element={<TeamManagement />} />
+          <Route path="teams/:id" element={<TeamDetail />} />
           <Route path="teams/record" element={<RecordTeam />} />
           <Route path="submissions" element={<SubmissionManagementCoordinator />} />
+          <Route path="submissions/:id" element={<SubmissionDetail />} />
           <Route path="mentors" element={<MentorManagement />} />
+          <Route path="mentors/new" element={<MentorForm />} />
+          <Route path="mentors/:id/edit" element={<MentorForm />} />
+          <Route path="mentors/:id/assign" element={<MentorAssign />} />
           <Route path="judges" element={<JudgeManagementCoordinator />} />
+          <Route path="judges/new" element={<JudgeForm />} />
+          <Route path="judges/:id/edit" element={<JudgeForm />} />
+          <Route path="judges/:id/assign" element={<JudgeAssign />} />
           <Route path="users" element={<UserApproval />} />
           <Route path="criteria" element={<CriteriaManagement />} />
-          <Route path="rankings" element={<RankingManagement />} />
+          <Route path="ranking" element={<RankingManagement />} />
+          <Route path="ranking/:id" element={<RankingDetail />} />
+          <Route path="scoring" element={<ScoringAnalytics />} />
           <Route path="awards" element={<AwardsManagement />} />
+          <Route path="awards/new" element={<AwardForm />} />
+          <Route path="awards/:id/edit" element={<AwardForm />} />
           <Route path="incidents" element={<IncidentReports />} />
           <Route path="incidents/:id" element={<IncidentReportDetail />} />
           <Route path="reports" element={<Reports />} />

@@ -1,19 +1,35 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, InputGroup } from 'react-bootstrap';
 import { Trophy, AlertTriangle, Eye, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const RankingManagement = () => {
+  const navigate = useNavigate();
   const [rankings, setRankings] = useState([
-    { rank: 1, team: 'DataCraft', category: 'Data Science', score: 91, status: 'Advanced' },
-    { rank: 2, team: 'QuantumLeap', category: 'AI/ML', score: 84, status: 'Advanced' },
-    { rank: 3, team: 'Neural Nexus', category: 'AI/ML', score: 82, status: 'Pending Review' },
-    { rank: 4, team: 'AlgoArts', category: 'AI/ML', score: 76, status: 'Eliminated' },
+    { id: 'team1', team: 'DataCraft', category: 'Data Science', scores: { innovation: 95, technical: 90, design: 88, presentation: 91 }, status: 'Advanced' },
+    { id: 'team2', team: 'QuantumLeap', category: 'AI/ML', scores: { innovation: 89, technical: 88, design: 80, presentation: 79 }, status: 'Advanced' },
+    { id: 'team3', team: 'Neural Nexus', category: 'AI/ML', scores: { innovation: 84, technical: 92, design: 81, presentation: 79 }, status: 'Pending Review' },
+    { id: 'team4', team: 'AlgoArts', category: 'AI/ML', scores: { innovation: 78, technical: 75, design: 80, presentation: 71 }, status: 'Eliminated' },
   ]);
+
+  // Calculate totals, sort with tie-breaker, and assign ranks
+  const sortedRankings = rankings
+    .map(t => {
+      const totalScore = Object.values(t.scores).reduce((sum, val) => sum + val, 0);
+      return { ...t, totalScore };
+    })
+    .sort((a, b) => {
+      if (b.totalScore === a.totalScore) {
+        return b.scores.innovation - a.scores.innovation; // Tie-breaker: Innovation
+      }
+      return b.totalScore - a.totalScore;
+    })
+    .map((t, index) => ({ ...t, rank: index + 1 }));
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [showModal, setShowModal] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const filteredRankings = rankings.filter((team) => {
+
+  const filteredRankings = sortedRankings.filter((team) => {
     const matchesSearch =
       team.team.toLowerCase().includes(
         searchTerm.toLowerCase()
@@ -102,7 +118,7 @@ const RankingManagement = () => {
                   </td>
                   <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>{team.team}</td>
                   <td className="py-3">{team.category}</td>
-                  <td className="py-3 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>{team.score}</td>
+                  <td className="py-3 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>{(team.totalScore / 4).toFixed(1)}</td>
                   <td className="py-3">
                     <Badge bg={
                       team.status === 'Advanced' ? 'success' :
@@ -112,7 +128,7 @@ const RankingManagement = () => {
                     </Badge>
                   </td>
                   <td className="py-3 text-end">
-                    <Button variant="link" size="sm" className="p-0 text-primary me-3" onClick={() => { setSelectedTeam(team); setShowModal(true); }}>
+                    <Button variant="link" size="sm" className="p-0 text-primary me-3" onClick={() => navigate(`/coordinator/ranking/${team.id}`)}>
                       <Eye size={16} />
                     </Button>
                     <Button variant="link" size="sm" className="p-0 text-danger" onClick={() => handleFlagTeam(team.rank)}>
@@ -125,56 +141,6 @@ const RankingManagement = () => {
           </Table>
         </div>
       </Card>
-      <Modal
-        show={showModal}
-        onHide={() => setShowModal(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Team Ranking Details
-          </Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          {selectedTeam && (
-            <>
-              <p>
-                <strong>Rank:</strong>
-                {' '}#{selectedTeam.rank}
-              </p>
-
-              <p>
-                <strong>Team:</strong>
-                {' '}{selectedTeam.team}
-              </p>
-
-              <p>
-                <strong>Category:</strong>
-                {' '}{selectedTeam.category}
-              </p>
-
-              <p>
-                <strong>Score:</strong>
-                {' '}{selectedTeam.score}
-              </p>
-
-              <p>
-                <strong>Status:</strong>
-                {' '}{selectedTeam.status}
-              </p>
-            </>
-          )}
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowModal(false)}
-          >
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

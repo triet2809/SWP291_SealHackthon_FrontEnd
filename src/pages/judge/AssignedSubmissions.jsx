@@ -27,7 +27,8 @@ const AssignedSubmissions = () => {
             <tr>
               <th>TEAM</th>
               <th>PROJECT</th>
-              <th>CATEGORY</th>
+              <th>TRACK</th>
+              <th>ROUND</th>
               <th>SUBMITTED</th>
               <th>STATUS</th>
               <th>SCORE</th>
@@ -47,7 +48,10 @@ const AssignedSubmissions = () => {
                 </td>
                 <td>{submission.project}</td>
                 <td>
-                  <span className={styles.categoryBadge}>{submission.category}</span>
+                  <span className={styles.categoryBadge} style={{ backgroundColor: 'var(--cf-primary-subtle)', color: 'var(--cf-primary)' }}>{submission.track}</span>
+                </td>
+                <td>
+                  <span className={styles.categoryBadge}>{submission.round}</span>
                 </td>
                 <td>{submission.submitted}</td>
                 <td>

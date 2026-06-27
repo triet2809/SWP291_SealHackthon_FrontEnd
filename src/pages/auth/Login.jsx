@@ -16,7 +16,11 @@ const Login = () => {
   }, [setForceTheme]);
 
   const handleDemoLogin = (role) => {
-    navigate(`/${role}/dashboard`);
+    if (role === 'student') {
+      navigate('/student');
+    } else {
+      navigate(`/${role}/dashboard`);
+    }
   };
 
   const handleStandardLogin = (e) => {
@@ -61,7 +65,8 @@ const Login = () => {
             </div>
 
             <div className={styles.roleTags}>
-              <span className={styles.roleTag}>Team Member</span>
+              <span className={styles.roleTag}>Student</span>
+              <span className={styles.roleTag}>Team Leader</span>
               <span className={styles.roleTag}>Mentor</span>
               <span className={styles.roleTag}>Judge</span>
             </div>

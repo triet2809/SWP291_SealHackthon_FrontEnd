@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap';
-import { Plus, Edit, Settings, Trash2 } from 'lucide-react';
+import { Plus, Edit, Settings, Trash2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const EventManagement = () => {
@@ -9,6 +9,12 @@ const EventManagement = () => {
 
   const [newEvent, setNewEvent] = useState({
     name: '',
+    term: '',
+    prize: '',
+    roundsCount: '',
+    tracksCount: '',
+    registrationStartDate: '',
+    registrationEndDate: '',
     startDate: '',
     endDate: '',
     status: 'Draft'
@@ -17,14 +23,33 @@ const EventManagement = () => {
   const [editingEvent, setEditingEvent] = useState(null);
 
   const [events, setEvents] = useState([
-    { id: 1, name: 'SEAL Hackathon 2026', startDate: 'June 20, 2026', endDate: 'June 22, 2026', status: 'Active', participants: 168 },
-    { id: 2, name: 'Winter CodeFest 2025', startDate: 'Dec 10, 2025', endDate: 'Dec 12, 2025', status: 'Completed', participants: 210 },
-    { id: 3, name: 'AI Innovation Challenge', startDate: 'Aug 15, 2026', endDate: 'Aug 30, 2026', status: 'Draft', participants: 0 },
+    { id: 1, name: 'SEAL Hackathon 2026', term: 'Summer 2026', prize: '$5000', roundsCount: '3', tracksCount: '4', registrationStartDate: '2026-05-01', registrationEndDate: '2026-06-15', startDate: '2026-06-20', endDate: '2026-06-22', status: 'Active', participants: 168 },
+    { id: 2, name: 'Winter CodeFest 2025', term: 'Fall 2025', prize: '$3000', roundsCount: '2', tracksCount: '3', registrationStartDate: '2025-11-01', registrationEndDate: '2025-12-05', startDate: '2025-12-10', endDate: '2025-12-12', status: 'Completed', participants: 210 },
+    { id: 3, name: 'AI Innovation Challenge', term: 'Fall 2026', prize: '$10000', roundsCount: '4', tracksCount: '2', registrationStartDate: '2026-07-01', registrationEndDate: '2026-08-10', startDate: '2026-08-15', endDate: '2026-08-30', status: 'Draft', participants: 0 },
   ]);
 
   const handleSaveEvent = () => {
-    if (!newEvent.name || !newEvent.startDate || !newEvent.endDate) {
-      alert('Please fill all fields');
+    if (!newEvent.name || !newEvent.term || !newEvent.registrationStartDate || !newEvent.registrationEndDate || !newEvent.startDate || !newEvent.endDate) {
+      alert('Please fill all required fields');
+      return;
+    }
+
+    // Constraints Validation
+    const regStart = new Date(newEvent.registrationStartDate);
+    const regEnd = new Date(newEvent.registrationEndDate);
+    const eventStart = new Date(newEvent.startDate);
+    const eventEnd = new Date(newEvent.endDate);
+
+    if (regStart >= regEnd) {
+      alert('Registration Start Date must be before Registration End Date');
+      return;
+    }
+    if (regEnd > eventStart) {
+      alert('Registration End Date must be before or equal to Event Start Date');
+      return;
+    }
+    if (eventStart >= eventEnd) {
+      alert('Event Start Date must be before Event End Date');
       return;
     }
 
@@ -39,6 +64,12 @@ const EventManagement = () => {
     setEditingEvent(null);
     setNewEvent({
       name: '',
+      term: '',
+      prize: '',
+      roundsCount: '',
+      tracksCount: '',
+      registrationStartDate: '',
+      registrationEndDate: '',
       startDate: '',
       endDate: '',
       status: 'Draft'
@@ -63,6 +94,12 @@ const EventManagement = () => {
           setEditingEvent(null);
           setNewEvent({
             name: '',
+            term: '',
+            prize: '',
+            roundsCount: '',
+            tracksCount: '',
+            registrationStartDate: '',
+            registrationEndDate: '',
             startDate: '',
             endDate: '',
             status: 'Draft'
@@ -102,15 +139,8 @@ const EventManagement = () => {
                     </Badge>
                   </td>
                   <td className="py-3 text-end">
-                    {/* <Button variant="link" size="sm" className="p-0 text-muted me-3">
-                      <Settings size={16} />
-                    </Button> */}
-                    <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => {
-                      setEditingEvent(event);
-                      setNewEvent(event);
-                      setShowModal(true);
-                    }}>
-                      <Edit size={16} />
+                    <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/events/${event.id}`)}>
+                      <Eye size={16} />
                     </Button>
                     <Button variant="link" size="sm" className="p-0 text-danger ms-3" onClick={() => handleDeleteEvent(event.id)}>
                       <Trash2 size={16} />
@@ -144,32 +174,140 @@ const EventManagement = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Start Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={newEvent.startDate}
+              <Form.Label>Term / Semester</Form.Label>
+              <Form.Select
+                value={newEvent.term}
                 onChange={(e) =>
                   setNewEvent({
                     ...newEvent,
-                    startDate: e.target.value
+                    term: e.target.value
+                  })
+                }
+              >
+                <option value="">Select Term</option>
+                <option value="Spring">Spring</option>
+                <option value="Summer">Summer</option>
+                <option value="Fall">Fall</option>
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Prize Pool</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g. $5000 or 50,000,000 VND"
+                value={newEvent.prize}
+                onChange={(e) =>
+                  setNewEvent({
+                    ...newEvent,
+                    prize: e.target.value
                   })
                 }
               />
             </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>End Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={newEvent.endDate}
-                onChange={(e) =>
-                  setNewEvent({
-                    ...newEvent,
-                    endDate: e.target.value
-                  })
-                }
-              />
-            </Form.Group>
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Number of Rounds</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 3"
+                    value={newEvent.roundsCount}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        roundsCount: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Number of Tracks</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 4"
+                    value={newEvent.tracksCount}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        tracksCount: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Registration Start</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={newEvent.registrationStartDate}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        registrationStartDate: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Registration End</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={newEvent.registrationEndDate}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        registrationEndDate: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Event Start</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={newEvent.startDate}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        startDate: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+              <div className="col-md-6">
+                <Form.Group className="mb-3">
+                  <Form.Label>Event End</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={newEvent.endDate}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        endDate: e.target.value
+                      })
+                    }
+                  />
+                </Form.Group>
+              </div>
+            </div>
 
             <Form.Group>
               <Form.Label>Status</Form.Label>
