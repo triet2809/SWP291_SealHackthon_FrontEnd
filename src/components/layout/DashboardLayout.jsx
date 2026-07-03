@@ -1,10 +1,16 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import styles from './DashboardLayout.module.css';
 
 const DashboardLayout = ({ role }) => {
+  const accessToken = localStorage.getItem('seal_access_token');
+
+  if (!accessToken) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className={styles.layout}>
       <Sidebar role={role} />

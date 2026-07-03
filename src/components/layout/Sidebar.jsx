@@ -21,12 +21,24 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { users } from '../../data/mockData';
+import { clearStoredAuth, logout } from '../../api/authApi';
 import styles from './Sidebar.module.css';
 import { Badge } from 'react-bootstrap';
 
 const Sidebar = ({ role }) => {
   const navigate = useNavigate();
-  const user = users[role];
+  const storedUser = JSON.parse(localStorage.getItem('seal_user') || 'null');
+  const fallbackUser = users[role];
+  const displayName = storedUser?.fullName || fallbackUser.name;
+  const displayEmail = storedUser?.email || fallbackUser.email;
+  const displayRole = storedUser?.roles?.[0] || fallbackUser.role;
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 
   // Define links based on role
   const getLinks = () => {
@@ -84,8 +96,17 @@ const Sidebar = ({ role }) => {
 
   const links = getLinks();
 
-  const handleLogout = () => {
-    navigate('/login');
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem('seal_access_token');
+
+    try {
+      if (accessToken) {
+        await logout(accessToken);
+      }
+    } finally {
+      clearStoredAuth();
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -106,7 +127,7 @@ const Sidebar = ({ role }) => {
             role === 'team' ? 'primary' : 
             role === 'mentor' ? 'purple' : 'success'
           } className={styles.roleBadge}>
-            {user.role}
+            {displayRole}
           </Badge>
         </div>
       </div>
@@ -128,10 +149,10 @@ const Sidebar = ({ role }) => {
 
       <div className={styles.footer}>
         <div className={styles.userProfile}>
-          <div className={styles.avatar}>{user.initials}</div>
+          <div className={styles.avatar}>{initials}</div>
           <div className={styles.userInfo}>
-            <div className={styles.userName}>{user.name}</div>
-            <div className={styles.userEmail}>{user.email}</div>
+            <div className={styles.userName}>{displayName}</div>
+            <div className={styles.userEmail}>{displayEmail}</div>
           </div>
           <button className={styles.logoutBtn} onClick={handleLogout} title="Logout">
             <LogOut size={18} />

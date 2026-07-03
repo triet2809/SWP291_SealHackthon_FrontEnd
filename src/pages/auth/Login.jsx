@@ -1,14 +1,28 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
+import { Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 import { Zap, Users, Award, Calendar, ArrowRight } from 'lucide-react';
 import { users } from '../../data/mockData';
+import { login } from '../../api/authApi';
 import styles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
+
+const routeByRole = (roles = []) => {
+  const normalizedRoles = roles.map((role) => String(role).toLowerCase());
+
+  if (normalizedRoles.includes('coordinator')) return '/coordinator/dashboard';
+  if (normalizedRoles.includes('mentor')) return '/mentor/dashboard';
+  if (normalizedRoles.includes('judge')) return '/judge/dashboard';
+  return '/team/dashboard';
+};
 
 const Login = () => {
   const navigate = useNavigate();
   const { setForceTheme } = useTheme();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setForceTheme('light');
@@ -19,10 +33,35 @@ const Login = () => {
     navigate(`/${role}/dashboard`);
   };
 
-  const handleStandardLogin = (e) => {
+  const handleStandardLogin = async (e) => {
     e.preventDefault();
-    // Default to team dashboard for standard login
-    navigate('/team/dashboard');
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const result = await login({ email, password });
+      if (!result.ok) {
+        setError(result.data?.message || 'Login failed');
+        return;
+      }
+
+      const authData = result.data?.data || result.data;
+      if (!authData?.accessToken) {
+        setError('Login response missing access token');
+        return;
+      }
+
+      localStorage.setItem('seal_access_token', authData.accessToken);
+      localStorage.setItem('seal_refresh_token', authData.refreshToken || '');
+      localStorage.setItem('seal_token_type', authData.tokenType || 'Bearer');
+      localStorage.setItem('seal_user', JSON.stringify(authData.user || {}));
+
+      navigate(routeByRole(authData.user?.roles), { replace: true });
+    } catch {
+      setError('Cannot reach the server');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -78,19 +117,33 @@ const Login = () => {
             <h2 className={styles.formTitle}>Welcome back</h2>
             <p className={styles.formSubtitle}>Sign in to access your dashboard</p>
 
+            {error && <Alert variant="danger">{error}</Alert>}
+
             <Form onSubmit={handleStandardLogin} className={styles.form}>
               <Form.Group className="mb-3" controlId="email">
                 <Form.Label>Email address</Form.Label>
-                <Form.Control type="email" placeholder="you@fpt.edu.vn" required />
+                <Form.Control
+                  type="email"
+                  placeholder="you@fpt.edu.vn"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="password">
                 <Form.Label>Password</Form.Label>
-                <Form.Control type="password" placeholder="••••••••" required />
+                <Form.Control
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </Form.Group>
 
-              <Button variant="primary" type="submit" className="w-100 py-2">
-                Sign In
+              <Button variant="primary" type="submit" className="w-100 py-2" disabled={submitting}>
+                {submitting ? <><Spinner size="sm" className="me-2" />Signing in...</> : 'Sign In'}
               </Button>
             </Form>
 
