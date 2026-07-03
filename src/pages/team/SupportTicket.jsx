@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Row, Col } from 'react-bootstrap';
+import { Alert, Card, Form, Button, Row, Col } from 'react-bootstrap';
 import { Send, LifeBuoy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { createSupportTicket } from '../../api/hackathonApi';
 
 const SupportTicket = () => {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({ category: '', priority: 'low', subject: '', description: '' });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError('');
+    try { await createSupportTicket(form); setSubmitted(true); } catch (err) { setError(err.message || 'Cannot submit ticket'); }
   };
 
   if (submitted) {
@@ -44,6 +48,7 @@ const SupportTicket = () => {
         <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Contact the organizing team for assistance</div>
       </div>
 
+        {error && <Alert variant="danger">{error}</Alert>}
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <Card.Body className="p-4">
           <Form onSubmit={handleSubmit}>
@@ -61,7 +66,7 @@ const SupportTicket = () => {
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Category</Form.Label>
-                  <Form.Select required>
+                  <Form.Select required value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
                     <option value="">Select Topic...</option>
                     <option value="technical">Technical / Platform Issue</option>
                     <option value="rules">Rule Clarification</option>
@@ -74,7 +79,7 @@ const SupportTicket = () => {
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Priority</Form.Label>
-                  <Form.Select required defaultValue="low">
+                  <Form.Select required value={form.priority} onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}>
                     <option value="low">Low - General Question</option>
                     <option value="medium">Medium - Hindering Progress</option>
                     <option value="high">High - Critical Issue (Emergency)</option>
@@ -88,7 +93,9 @@ const SupportTicket = () => {
                   <Form.Control 
                     type="text" 
                     placeholder="Brief summary of your issue..." 
-                    required 
+                    required
+                    value={form.subject}
+                    onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
@@ -101,6 +108,8 @@ const SupportTicket = () => {
                     rows={6} 
                     placeholder="Provide all relevant details, links, or context..."
                     required
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   />
                 </Form.Group>
               </Col>

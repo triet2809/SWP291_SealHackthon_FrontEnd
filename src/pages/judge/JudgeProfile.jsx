@@ -1,145 +1,17 @@
-import React, { useState } from 'react';
-import { Card, Form, Row, Col, Button } from 'react-bootstrap';
-import { users } from '../../data/mockData';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { getMe, updateMe } from '../../api/userApi';
+import { getInitials, saveStoredUser } from '../../utils/authUser';
 import styles from './JudgeProfile.module.css';
 
 const JudgeProfile = () => {
-  const user = users.judge;
-  const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    universityId: user.universityId,
-    department: user.department,
-    position: user.position,
-    phone: user.phone
-  });
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert('Profile updated successfully!');
-  };
-
-  return (
-    <div className="py-2">
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Profile</h1>
-        <div className={styles.pageSubtitle}>
-          Manage your account information
-        </div>
-      </div>
-
-      <Card className={styles.profileCard}>
-        <Card.Body className="p-4 p-md-5">
-          
-          <div className={styles.profileHeaderInfo}>
-            <div className={styles.avatarLarge}>
-              {user.initials}
-            </div>
-            <div className={styles.userInfo}>
-              <div className={styles.userName}>{user.name}</div>
-              <div className={styles.userSpecialty}>{user.specialty}</div>
-              <div className={styles.roleBadge}>{user.role}</div>
-            </div>
-          </div>
-
-          <Form onSubmit={handleSubmit}>
-            <Row className="mb-4">
-              <Col md={6} className="mb-3 mb-md-0">
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Full Name</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="name"
-                    value={formData.name} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Email Address</Form.Label>
-                  <Form.Control 
-                    type="email" 
-                    name="email"
-                    value={formData.email} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row className="mb-4">
-              <Col md={6} className="mb-3 mb-md-0">
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>University ID</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="universityId"
-                    value={formData.universityId} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Department</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="department"
-                    value={formData.department} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row className="mb-4">
-              <Col md={6} className="mb-3 mb-md-0">
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Title / Position</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="position"
-                    value={formData.position} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Phone</Form.Label>
-                  <Form.Control 
-                    type="tel" 
-                    name="phone"
-                    value={formData.phone} 
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Button type="submit" className={styles.saveBtn}>
-              Save Changes
-            </Button>
-          </Form>
-
-        </Card.Body>
-      </Card>
-    </div>
-  );
+  const [state, setState] = useState({ loading: true, saving: false, error: '', success: '', user: null });
+  const [form, setForm] = useState({ fullName: '', studentId: '' });
+  useEffect(() => { (async () => { try { const me = await getMe(); setState({ loading: false, saving: false, error: '', success: '', user: me.value }); setForm({ fullName: me.value?.fullName || '', studentId: me.value?.studentId || '' }); } catch (e) { setState((s) => ({ ...s, loading: false, error: e.message || 'Cannot load profile' })); } })(); }, []);
+  const save = async (e) => { e.preventDefault(); setState((s) => ({ ...s, saving: true, error: '', success: '' })); try { const res = await updateMe({ fullName: form.fullName, studentId: form.studentId }); saveStoredUser(res.value); setState((s) => ({ ...s, saving: false, success: 'Profile updated', user: res.value })); } catch (err) { setState((s) => ({ ...s, saving: false, error: err.message || 'Cannot update profile' })); } };
+  if (state.loading) return <div className="py-4 text-center"><Spinner size="sm" className="me-2" />Loading profile...</div>;
+  const user = state.user || {};
+  return <div className="py-2"><div className={styles.pageHeader}><h1 className={styles.pageTitle}>Profile</h1><div className={styles.pageSubtitle}>Manage your account information</div></div>{state.error && <Alert variant="danger">{state.error}</Alert>}{state.success && <Alert variant="success">{state.success}</Alert>}<Card className={styles.profileCard}><Card.Body className="p-4 p-md-5"><div className={styles.profileHeaderInfo}><div className={styles.avatarLarge}>{getInitials(user.fullName || user.email)}</div><div className={styles.userInfo}><div className={styles.userName}>{user.fullName || user.email}</div><div className={styles.userSpecialty}>{user.universityName || user.campusName || 'Judge'}</div><div className={styles.roleBadge}>{(user.roles || []).join(', ') || 'judge'}</div></div></div><Form onSubmit={save}><Row className="mb-4"><Col md={6} className="mb-3 mb-md-0"><Form.Group><Form.Label className={styles.formLabel}>Full Name</Form.Label><Form.Control type="text" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} className={styles.formControl} required /></Form.Group></Col><Col md={6}><Form.Group><Form.Label className={styles.formLabel}>Email Address</Form.Label><Form.Control type="email" value={user.email || ''} className={styles.formControl} readOnly /></Form.Group></Col></Row><Row className="mb-4"><Col md={6} className="mb-3 mb-md-0"><Form.Group><Form.Label className={styles.formLabel}>Student ID</Form.Label><Form.Control type="text" value={form.studentId} onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))} className={styles.formControl} /></Form.Group></Col><Col md={6}><Form.Group><Form.Label className={styles.formLabel}>University</Form.Label><Form.Control type="text" value={user.universityName || user.universityId || ''} className={styles.formControl} readOnly /></Form.Group></Col></Row><Row className="mb-4"><Col md={6} className="mb-3 mb-md-0"><Form.Group><Form.Label className={styles.formLabel}>Campus</Form.Label><Form.Control type="text" value={user.campusName || user.campusId || ''} className={styles.formControl} readOnly /></Form.Group></Col><Col md={6}><Form.Group><Form.Label className={styles.formLabel}>Account Status</Form.Label><Form.Control type="text" value={user.status || ''} className={styles.formControl} readOnly /></Form.Group></Col></Row><Button type="submit" className={styles.saveBtn} disabled={state.saving}>{state.saving ? 'Saving...' : 'Save Changes'}</Button></Form></Card.Body></Card></div>;
 };
 
 export default JudgeProfile;

@@ -1,122 +1,28 @@
-import React, { useState } from 'react';
-import { Card, Form, Row, Col, Button } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { AlertCircle, Upload } from 'lucide-react';
-import { teamData } from '../../data/mockData';
+import { getMyTeams, getRounds, getSubmissions, upsertSubmission } from '../../api/hackathonApi';
 import styles from './SubmissionManagement.module.css';
 
+const pageItems = (data) => data?.content || data || [];
+
 const SubmissionManagement = () => {
-  const [formData, setFormData] = useState({
-    title: teamData.project,
-    category: teamData.category,
-    description: teamData.fullDescription || teamData.description,
-    github: 'https://github.com/neural-nexus/edutrack-ai'
-  });
+  const [team, setTeam] = useState(null);
+  const [rounds, setRounds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({ roundId: '', repoUrl: '', demoUrl: '', slideUrl: '', reportUrl: '', apiMetadata: '' });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => { (async () => { setLoading(true); setError(''); try { const teams = await getMyTeams(); const current = teams?.[0] || null; setTeam(current); if (current) { const rd = pageItems(await getRounds({ trackId: current.trackId, size: 100 })); const subs = pageItems(await getSubmissions({ teamId: current.id, size: 100 }).catch(() => [])); const latest = subs.find((s) => !s.teamId || s.teamId === current.id); setRounds(rd); setFormData({ roundId: latest?.roundId || rd[0]?.id || '', repoUrl: latest?.repoUrl || '', demoUrl: latest?.demoUrl || '', slideUrl: latest?.slideUrl || '', reportUrl: latest?.reportUrl || '', apiMetadata: latest?.apiMetadata || '' }); } } catch (e) { setError(e.message || 'Cannot load submission form'); } finally { setLoading(false); } })(); }, []);
+  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleSubmit = async (e) => { e.preventDefault(); if (!team || !formData.roundId) return; setSaving(true); setError(''); setSuccess(''); try { await upsertSubmission({ teamId: team.id, roundId: formData.roundId, repoUrl: formData.repoUrl || null, demoUrl: formData.demoUrl || null, slideUrl: formData.slideUrl || null, reportUrl: formData.reportUrl || null, apiMetadata: formData.apiMetadata || null }); setSuccess('Submission saved to backend.'); } catch (err) { setError(err.message || 'Save submission failed'); } finally { setSaving(false); } };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Submission logic would go here
-  };
+  if (loading) return <div className="py-4 text-center"><Spinner size="sm" className="me-2" />Loading...</div>;
+  if (!team) return <Alert variant="info">Bạn chưa thuộc team nào nên chưa thể nộp bài.</Alert>;
 
-  return (
-    <div className="py-2">
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Submission Management</h1>
-        <div className={styles.pageSubtitle}>
-          Upload and manage your hackathon project
-        </div>
-      </div>
-
-      <Card className={styles.formCard}>
-        <Card.Body className="p-4">
-          <h5 className={styles.cardTitle}>Current Submission</h5>
-          
-          <div className={styles.draftAlert}>
-            <AlertCircle size={18} className={styles.draftAlertIcon} />
-            <span>Submission is in <strong>Draft</strong> status. Final deadline: June 19, 11:59 PM.</span>
-          </div>
-
-          <Form onSubmit={handleSubmit}>
-            <Row className="mb-4">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Project Title</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className={styles.formLabel}>Category</Form.Label>
-                  <Form.Select 
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className={styles.formControl}
-                  >
-                    <option value="AI & Machine Learning">AI & Machine Learning</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Web3 & Blockchain">Web3 & Blockchain</option>
-                    <option value="HealthTech">HealthTech</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Form.Group className="mb-4">
-              <Form.Label className={styles.formLabel}>Project Description</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={4}
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className={styles.formControl}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-4">
-              <Form.Label className={styles.formLabel}>Project Files</Form.Label>
-              <div className={styles.dropzone}>
-                <Upload size={24} className={styles.dropzoneIcon} />
-                <div className={styles.dropzoneTitle}>Drop files here or click to browse</div>
-                <div className={styles.dropzoneSubtitle}>ZIP, PDF, MP4 up to 100MB</div>
-              </div>
-            </Form.Group>
-
-            <Form.Group className="mb-4">
-              <Form.Label className={styles.formLabel}>GitHub Repository URL</Form.Label>
-              <Form.Control 
-                type="url" 
-                name="github"
-                value={formData.github}
-                onChange={handleChange}
-                className={styles.formControl}
-              />
-            </Form.Group>
-
-            <div className={styles.buttonContainer}>
-              <button type="button" className={`btn ${styles.btnSave}`}>
-                Save Draft
-              </button>
-              <Button variant="primary" type="submit" className={styles.btnSubmit}>
-                Submit Final
-              </Button>
-            </div>
-          </Form>
-        </Card.Body>
-      </Card>
-    </div>
-  );
+  return <div className="py-2"><div className={styles.pageHeader}><h1 className={styles.pageTitle}>Submission Management</h1><div className={styles.pageSubtitle}>Upload and manage your hackathon project</div></div><Card className={styles.formCard}><Card.Body className="p-4"><h5 className={styles.cardTitle}>Current Submission</h5>{error && <Alert variant="danger">{error}</Alert>}{success && <Alert variant="success">{success}</Alert>}<div className={styles.draftAlert}><AlertCircle size={18} className={styles.draftAlertIcon} /><span>Submissions are saved through backend `POST /api/submissions` for team <strong>{team.name}</strong>.</span></div><Form onSubmit={handleSubmit}><Row className="mb-4"><Col md={6}><Form.Group><Form.Label className={styles.formLabel}>Team</Form.Label><Form.Control type="text" value={team.name} className={styles.formControl} disabled /></Form.Group></Col><Col md={6}><Form.Group><Form.Label className={styles.formLabel}>Round</Form.Label><Form.Select name="roundId" value={formData.roundId} onChange={handleChange} className={styles.formControl} required>{rounds.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</Form.Select></Form.Group></Col></Row><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>Project Metadata / Notes</Form.Label><Form.Control as="textarea" rows={4} name="apiMetadata" value={formData.apiMetadata} onChange={handleChange} className={styles.formControl} placeholder="JSON or notes for evaluator" /></Form.Group><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>Project Files</Form.Label><div className={styles.dropzone}><Upload size={24} className={styles.dropzoneIcon} /><div className={styles.dropzoneTitle}>File upload not in backend; use URLs below</div><div className={styles.dropzoneSubtitle}>Repository, demo, slides, report links are supported</div></div></Form.Group><Row><Col md={6}><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>GitHub Repository URL</Form.Label><Form.Control type="url" name="repoUrl" value={formData.repoUrl} onChange={handleChange} className={styles.formControl} /></Form.Group></Col><Col md={6}><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>Demo URL</Form.Label><Form.Control type="url" name="demoUrl" value={formData.demoUrl} onChange={handleChange} className={styles.formControl} /></Form.Group></Col><Col md={6}><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>Slide URL</Form.Label><Form.Control type="url" name="slideUrl" value={formData.slideUrl} onChange={handleChange} className={styles.formControl} /></Form.Group></Col><Col md={6}><Form.Group className="mb-4"><Form.Label className={styles.formLabel}>Report URL</Form.Label><Form.Control type="url" name="reportUrl" value={formData.reportUrl} onChange={handleChange} className={styles.formControl} /></Form.Group></Col></Row><div className={styles.buttonContainer}><Button variant="primary" type="submit" className={styles.btnSubmit} disabled={saving}>{saving ? 'Saving…' : 'Submit / Update'}</Button></div></Form></Card.Body></Card></div>;
 };
 
 export default SubmissionManagement;

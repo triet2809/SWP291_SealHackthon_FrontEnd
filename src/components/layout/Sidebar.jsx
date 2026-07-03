@@ -25,10 +25,12 @@ import {
 import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
 import { Badge } from 'react-bootstrap';
+import { getInitials, getStoredUser } from '../../utils/authUser';
+import { logoutServer } from '../../api/userApi';
 
 const Sidebar = ({ role }) => {
   const navigate = useNavigate();
-  const user = users[role];
+  const user = getStoredUser() || users[role];
 
   // Define links based on role
 
@@ -96,8 +98,13 @@ const Sidebar = ({ role }) => {
 
   const links = getLinks();
 
-  const handleLogout = () => {
-    navigate('/login');
+  const handleLogout = async () => {
+    try { await logoutServer(); } catch { /* local logout still proceeds */ }
+    localStorage.removeItem('seal_access_token');
+    localStorage.removeItem('seal_refresh_token');
+    localStorage.removeItem('seal_token_type');
+    localStorage.removeItem('seal_user');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -118,7 +125,7 @@ const Sidebar = ({ role }) => {
             role === 'team' ? 'primary' : 
             role === 'mentor' ? 'purple' : 'success'
           } className={styles.roleBadge}>
-            {user.role}
+            {user.role || role}
           </Badge>
         </div>
       </div>
@@ -140,9 +147,9 @@ const Sidebar = ({ role }) => {
 
       <div className={styles.footer}>
         <div className={styles.userProfile}>
-          <div className={styles.avatar}>{user.initials}</div>
+          <div className={styles.avatar}>{user.initials || getInitials(user.fullName || user.name || user.email)}</div>
           <div className={styles.userInfo}>
-            <div className={styles.userName}>{user.name}</div>
+            <div className={styles.userName}>{user.fullName || user.name || user.email}</div>
             <div className={styles.userEmail}>{user.email}</div>
           </div>
           <button className={styles.logoutBtn} onClick={handleLogout} title="Logout">

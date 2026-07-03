@@ -1,102 +1,21 @@
-import React from 'react';
-import { Card, Row, Col, Badge, Button, ProgressBar } from 'react-bootstrap';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, Badge, Button, Card, Col, ProgressBar, Row, Spinner } from 'react-bootstrap';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styles from './SubmissionHistory.module.css';
+import { getScores, getSubmission } from '../../api/hackathonApi';
+
+const pageItems = (data) => data?.content || data || [];
 
 const TeamScoreDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-
-  // Mock data for the team's view of their score
-  const scoreData = {
-    version: 'v1.2 (Final)',
-    submittedAt: 'June 18, 2026',
-    overallScore: 92.5,
-    status: 'Evaluated',
-    criteria: [
-      { name: 'Innovation & Creativity', score: 95, max: 100 },
-      { name: 'Technical Complexity', score: 90, max: 100 },
-      { name: 'UI/UX Design', score: 88, max: 100 },
-      { name: 'Business Viability', score: 97, max: 100 }
-    ],
-    feedback: [
-      { judge: 'Judge 1', comment: 'Exceptional use of Transformers for the recommendation engine. UI needs slight polish.' },
-      { judge: 'Judge 2', comment: 'Solid technical implementation. Business model is very viable.' },
-      { judge: 'Judge 3', comment: 'Great potential. Would love to see more data on the training set used.' }
-    ]
-  };
-
-  return (
-    <div className="py-2">
-      <div className="d-flex align-items-center gap-3 mb-4">
-        <Button variant="link" className="p-0 text-muted" onClick={() => navigate('/team/history')}>
-          <ArrowLeft size={24} />
-        </Button>
-        <div>
-          <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Evaluation Results</h1>
-          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Review the judges' feedback and your final scores</div>
-        </div>
-      </div>
-
-      <Row className="g-4">
-        {/* Left Column: Overall Score & Criteria */}
-        <Col lg={8}>
-          <Card className="mb-4" style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <Card.Body className="p-4">
-              <div className="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                  <h5 className="fw-bold mb-1">Detailed Scoring Breakdown</h5>
-                  <div className="text-muted small">Submission: {scoreData.version} • {scoreData.submittedAt}</div>
-                </div>
-                <Badge bg="success" className="px-3 py-2 fs-6">{scoreData.overallScore} / 100</Badge>
-              </div>
-
-              <div className="d-flex flex-column gap-4 mt-4">
-                {scoreData.criteria.map((criterion, idx) => (
-                  <div key={idx}>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-medium">{criterion.name}</span>
-                      <span className="fw-bold" style={{ color: 'var(--cf-text-primary)' }}>
-                        {criterion.score}/{criterion.max}
-                      </span>
-                    </div>
-                    <ProgressBar 
-                      now={criterion.score} 
-                      max={criterion.max} 
-                      variant="primary" 
-                      style={{ height: '8px', backgroundColor: 'var(--cf-bg-main)' }} 
-                    />
-                  </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Right Column: Feedback */}
-        <Col lg={4}>
-          <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: '100%' }}>
-            <Card.Body className="p-4">
-              <div className="d-flex align-items-center gap-2 mb-4">
-                <MessageSquare size={20} className="text-primary" />
-                <h5 className="fw-bold mb-0">Judge Comments</h5>
-              </div>
-              
-              <div className="d-flex flex-column gap-3">
-                {scoreData.feedback.map((fb, idx) => (
-                  <div key={idx} className="p-3 rounded" style={{ backgroundColor: 'var(--cf-bg-main)', border: '1px solid var(--cf-border-color)' }}>
-                    <div className="fw-bold mb-2 small text-primary">{fb.judge}</div>
-                    <p className="mb-0 text-muted small" style={{ lineHeight: '1.5' }}>"{fb.comment}"</p>
-                  </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </div>
-  );
+  const [state, setState] = useState({ loading: true, error: '', submission: null, scores: [] });
+  useEffect(() => { (async () => { try { const [submission, scores] = await Promise.all([getSubmission(id), getScores({ submissionId: id, size: 500 }).then(pageItems).catch(() => [])]); setState({ loading: false, error: '', submission, scores }); } catch (e) { setState((s) => ({ ...s, loading: false, error: e.message || 'Cannot load score details' })); } })(); }, [id]);
+  const grouped = useMemo(() => { const map = new Map(); state.scores.forEach((s) => { const key = s.criterionId || s.criterionName; if (!map.has(key)) map.set(key, { name: s.criterionName || key, scores: [], comments: [] }); const item = map.get(key); item.scores.push(Number(s.score || 0)); if (s.comment) item.comments.push({ judge: s.judgeEmail || s.judgeId, comment: s.comment }); }); return Array.from(map.values()).map((c) => ({ ...c, avg: c.scores.length ? c.scores.reduce((a, b) => a + b, 0) / c.scores.length : 0 })); }, [state.scores]);
+  const overall = grouped.length ? grouped.reduce((sum, c) => sum + c.avg, 0) / grouped.length : 0;
+  if (state.loading) return <div className="py-4 text-center"><Spinner size="sm" className="me-2" />Loading scores...</div>;
+  if (state.error) return <Alert variant="danger">{state.error}</Alert>;
+  return <div className="py-2"><div className="d-flex align-items-center gap-3 mb-4"><Button variant="link" className="p-0 text-muted" onClick={() => navigate('/team/history')}><ArrowLeft size={24} /></Button><div><h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Evaluation Results</h1><div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Review judges feedback and final scores</div></div></div><Row className="g-4"><Col lg={8}><Card className="mb-4" style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}><Card.Body className="p-4"><div className="d-flex justify-content-between align-items-start mb-4"><div><h5 className="fw-bold mb-1">Detailed Scoring Breakdown</h5><div className="text-muted small">Submission: {state.submission?.id} • {state.submission?.submittedAt ? new Date(state.submission.submittedAt).toLocaleString() : '-'}</div></div><Badge bg={state.scores.length ? 'success' : 'secondary'} className="px-3 py-2 fs-6">{state.scores.length ? overall.toFixed(1) : 'Pending'} / 100</Badge></div><div className="d-flex flex-column gap-4 mt-4">{grouped.length === 0 ? <Alert variant="info">Submission chưa được chấm hoặc chưa có điểm.</Alert> : grouped.map((criterion) => <div key={criterion.name}><div className="d-flex justify-content-between align-items-center mb-2"><span className="fw-medium">{criterion.name}</span><span className="fw-bold" style={{ color: 'var(--cf-text-primary)' }}>{criterion.avg.toFixed(1)}/100</span></div><ProgressBar now={criterion.avg} max={100} variant="primary" style={{ height: '8px', backgroundColor: 'var(--cf-bg-main)' }} /></div>)}</div></Card.Body></Card></Col><Col lg={4}><Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: '100%' }}><Card.Body className="p-4"><div className="d-flex align-items-center gap-2 mb-4"><MessageSquare size={20} className="text-primary" /><h5 className="fw-bold mb-0">Judge Comments</h5></div><div className="d-flex flex-column gap-3">{grouped.flatMap((c) => c.comments.map((fb, idx) => ({ ...fb, key: `${c.name}-${idx}`, criterion: c.name }))).length === 0 ? <div className="text-muted">No comments yet.</div> : grouped.flatMap((c) => c.comments.map((fb, idx) => <div key={`${c.name}-${idx}`} className="p-3 rounded" style={{ backgroundColor: 'var(--cf-bg-main)', border: '1px solid var(--cf-border-color)' }}><div className="fw-bold mb-2 small text-primary">{fb.judge} · {c.name}</div><p className="mb-0 text-muted small" style={{ lineHeight: '1.5' }}>"{fb.comment}"</p></div>))}</div></Card.Body></Card></Col></Row></div>;
 };
 
 export default TeamScoreDetails;

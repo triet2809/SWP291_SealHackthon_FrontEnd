@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Card, Button, Form, Row, Col, Badge, InputGroup, Nav, Tab } from 'react-bootstrap';
+import { Alert, Card, Button, Form, Row, Col, Badge, InputGroup, Nav, Tab } from 'react-bootstrap';
 import { Key, Search, Users, ArrowRight, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { joinTeamByInviteCode } from '../../api/hackathonApi';
 
 const JoinTeam = () => {
   const navigate = useNavigate();
   const [inviteCode, setInviteCode] = useState('');
   const [activeTab, setActiveTab] = useState('code');
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState('');
 
   // Simulated list of public teams looking for members
   const publicTeams = [
@@ -17,11 +19,16 @@ const JoinTeam = () => {
     { id: 4, name: 'CyberShield', project: 'Zero Trust Auth', members: 1, category: 'Security' }
   ];
 
-  const handleJoinViaCode = (e) => {
+  const handleJoinViaCode = async (e) => {
     e.preventDefault();
     if (!inviteCode) return;
-    alert(`Successfully joined team using code: ${inviteCode}!`);
-    navigate('/team/dashboard');
+    setError('');
+    try {
+      await joinTeamByInviteCode(inviteCode);
+      navigate('/team/dashboard');
+    } catch (err) {
+      setError(err.message || 'Cannot join team');
+    }
   };
 
   const handleSendRequest = (teamName) => {
@@ -41,6 +48,7 @@ const JoinTeam = () => {
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Use an invite code from your team leader or browse public teams.</div>
         </div>
       </div>
+      {error && <Alert variant="danger">{error}</Alert>}
 
       <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
         <Nav variant="pills" className="mb-4 d-flex gap-2">
