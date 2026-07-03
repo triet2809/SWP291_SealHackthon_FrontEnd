@@ -81,7 +81,14 @@ const Register = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Campus Name</Form.Label>
-                      <Form.Control type="text" placeholder="e.g. Ho Chi Minh" required />
+                      <Form.Select required>
+                        <option value="">Select Campus</option>
+                        <option value="Hà Nội">Hà Nội</option>
+                        <option value="Hồ Chí Minh">Hồ Chí Minh</option>
+                        <option value="Đà Nẵng">Đà Nẵng</option>
+                        <option value="Quy Nhơn">Quy Nhơn</option>
+                        <option value="Cần Thơ">Cần Thơ</option>
+                      </Form.Select>
                     </Form.Group>
                   </Col>
                 </Row>
