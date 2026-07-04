@@ -77,7 +77,7 @@ const SubmissionManagement = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const save = async () => {
+  const save = async (status) => {
     if (!team?.id || !round?.id) {
       setError('No active round to submit to.');
       return;
@@ -86,7 +86,7 @@ const SubmissionManagement = () => {
     setSaved('');
     setError('');
     try {
-      const payload = { ...formData };
+      const payload = { ...formData, status };
       if (submission?.id) {
         const updated = await updateSubmission(submission.id, payload);
         setSubmission(updated);
@@ -94,7 +94,7 @@ const SubmissionManagement = () => {
         const created = await upsertSubmission({ roundId: round.id, teamId: team.id, ...payload });
         setSubmission(created);
       }
-      setSaved('Submission saved.');
+      setSaved(status === 'submitted' ? 'Đã nộp bài.' : 'Đã lưu nháp.');
     } catch (e) {
       setError(e.message || 'Failed to save submission');
     } finally {
@@ -104,7 +104,7 @@ const SubmissionManagement = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    save();
+    save('submitted');
   };
 
   if (loading) {
@@ -139,7 +139,7 @@ const SubmissionManagement = () => {
           <div className={styles.draftAlert}>
             <AlertCircle size={18} className={styles.draftAlertIcon} />
             <span>
-              Status: <strong>{submission ? 'Submitted' : 'Draft'}</strong>
+              Status: <strong>{submission?.status === 'submitted' ? 'Submitted' : 'Draft'}</strong>
               {round ? <> · Round: {round.name} · Deadline: {deadlineText}</> : ''}
             </span>
           </div>
@@ -232,7 +232,7 @@ const SubmissionManagement = () => {
             </Form.Group>
 
             <div className={styles.buttonContainer}>
-              <button type="button" className={`btn ${styles.btnSave}`} onClick={save} disabled={saving || !team || !round}>
+              <button type="button" className={`btn ${styles.btnSave}`} onClick={() => save('draft')} disabled={saving || !team || !round}>
                 {saving ? 'Saving…' : 'Save Draft'}
               </button>
               <Button variant="primary" type="submit" className={styles.btnSubmit} disabled={saving || !team || !round}>
