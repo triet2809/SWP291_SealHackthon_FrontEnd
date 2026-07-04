@@ -144,6 +144,24 @@ export async function deleteRoundJudge(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove round judge');
 }
 
+export async function getTrackJudges(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/track-judges${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load track judges');
+  return res.data;
+}
+
+export async function assignTrackJudge(payload) {
+  const res = await apiPost('/track-judges', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to assign track judge');
+  return res.data;
+}
+
+export async function deleteTrackJudge(id) {
+  const res = await apiDelete(`/track-judges/${id}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to remove track judge');
+}
+
 export async function getTeams(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/teams${qs ? `?${qs}` : ''}`);

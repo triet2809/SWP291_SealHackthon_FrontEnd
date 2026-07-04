@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Form, Badge, Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { ArrowLeft, UserCheck, Mail, Bookmark, Layers } from 'lucide-react';
+import { Card, Button, Form, Badge, Row, Col, Spinner, Alert, Tabs, Tab } from 'react-bootstrap';
+import { ArrowLeft, UserCheck, Mail, Bookmark, Layers, Grid } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getRounds, getRoundJudges, assignRoundJudge, deleteRoundJudge } from '../../api/hackathonApi';
+import { getRounds, getRoundJudges, assignRoundJudge, deleteRoundJudge, getTracks, getTrackJudges, assignTrackJudge, deleteTrackJudge } from '../../api/hackathonApi';
 import { getUsers } from '../../api/userApi';
 
 const listOf = (data) => data?.content || data || [];
@@ -16,6 +16,10 @@ const JudgeAssign = () => {
   // map roundId -> round-judge assignment id (existing BE assignments for this judge)
   const [assignments, setAssignments] = useState({});
   const [selectedRounds, setSelectedRounds] = useState([]);
+  // tracks
+  const [availableTracks, setAvailableTracks] = useState([]);
+  const [trackAssignments, setTrackAssignments] = useState({}); // trackId -> track-judge id
+  const [selectedTracks, setSelectedTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -24,10 +28,12 @@ const JudgeAssign = () => {
     try {
       setLoading(true);
       setError('');
-      const [usersRes, roundsData, rjData] = await Promise.all([
+      const [usersRes, roundsData, rjData, tracksData, tjData] = await Promise.all([
         getUsers({}),
         getRounds({ size: 100 }),
         getRoundJudges({ size: 100 }),
+        getTracks({ size: 100 }),
+        getTrackJudges({ userId: id, size: 100 }),
       ]);
       const users = usersRes.value || [];
       setJudge(users.find((u) => u.id === id) || null);
@@ -39,6 +45,13 @@ const JudgeAssign = () => {
       rjs.forEach((rj) => { map[rj.roundId] = rj.id; });
       setAssignments(map);
       setSelectedRounds(Object.keys(map));
+
+      setAvailableTracks(listOf(tracksData));
+      const tjs = listOf(tjData).filter((tj) => tj.userId === id);
+      const tmap = {};
+      tjs.forEach((tj) => { tmap[tj.trackId] = tj.id; });
+      setTrackAssignments(tmap);
+      setSelectedTracks(Object.keys(tmap));
     } catch (err) {
       setError(err.message || 'Failed to load assignment data');
     } finally {
@@ -59,20 +72,38 @@ const JudgeAssign = () => {
     }
   };
 
+  const handleToggleTrack = (trackId) => {
+    if (selectedTracks.includes(trackId)) {
+      setSelectedTracks(selectedTracks.filter((tid) => tid !== trackId));
+    } else {
+      setSelectedTracks([...selectedTracks, trackId]);
+    }
+  };
+
   const handleSave = async () => {
     if (!judge) return;
     try {
       setSaving(true);
       setError('');
+      // rounds diff
       const existing = Object.keys(assignments);
       const toAdd = selectedRounds.filter((rid) => !existing.includes(rid));
       const toRemove = existing.filter((rid) => !selectedRounds.includes(rid));
-
       for (const roundId of toAdd) {
         await assignRoundJudge({ roundId, userId: id });
       }
       for (const roundId of toRemove) {
         await deleteRoundJudge(assignments[roundId]);
+      }
+      // tracks diff
+      const existingTracks = Object.keys(trackAssignments);
+      const tAdd = selectedTracks.filter((tid) => !existingTracks.includes(tid));
+      const tRemove = existingTracks.filter((tid) => !selectedTracks.includes(tid));
+      for (const trackId of tAdd) {
+        await assignTrackJudge({ trackId, userId: id });
+      }
+      for (const trackId of tRemove) {
+        await deleteTrackJudge(trackAssignments[trackId]);
       }
       navigate('/coordinator/judges');
     } catch (err) {
@@ -127,37 +158,67 @@ const JudgeAssign = () => {
       <Row className="g-4">
         <Col md={12}>
           <Card className="h-100" style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <Card.Header className="bg-transparent border-bottom p-4">
-              <h5 className="fw-bold mb-0 d-flex align-items-center gap-2"><Layers size={20} className="text-primary" /> Assign Rounds</h5>
-              <div className="text-muted small mt-1">Which rounds will this judge participate in?</div>
-            </Card.Header>
             <Card.Body className="p-4">
-              {availableRounds.length === 0 ? (
-                <div className="text-muted">No rounds available.</div>
-              ) : (
-                <Form className="d-flex flex-column gap-3">
-                  {availableRounds.map((round) => {
-                    const isSelected = selectedRounds.includes(round.id);
-                    return (
-                      <div
-                        key={round.id}
-                        className={`p-3 rounded border ${isSelected ? 'border-primary bg-primary bg-opacity-10' : 'border-light'}`}
-                        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                        onClick={() => handleToggleRound(round.id)}
-                      >
-                        <Form.Check
-                          type="checkbox"
-                          id={`round-${round.id}`}
-                          label={<span className="fw-medium ms-2">{round.name}{round.sequenceNumber ? ` (#${round.sequenceNumber})` : ''}</span>}
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="mb-0"
-                        />
-                      </div>
-                    );
-                  })}
-                </Form>
-              )}
+              <Tabs defaultActiveKey="rounds" className="mb-4">
+                <Tab eventKey="rounds" title={<span className="d-flex align-items-center gap-2"><Layers size={16} /> Rounds</span>}>
+                  <div className="text-muted small mb-3">Which rounds will this judge evaluate?</div>
+                  {availableRounds.length === 0 ? (
+                    <div className="text-muted">No rounds available.</div>
+                  ) : (
+                    <Form className="d-flex flex-column gap-3">
+                      {availableRounds.map((round) => {
+                        const isSelected = selectedRounds.includes(round.id);
+                        return (
+                          <div
+                            key={round.id}
+                            className={`p-3 rounded border ${isSelected ? 'border-primary bg-primary bg-opacity-10' : 'border-light'}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                            onClick={() => handleToggleRound(round.id)}
+                          >
+                            <Form.Check
+                              type="checkbox"
+                              id={`round-${round.id}`}
+                              label={<span className="fw-medium ms-2">{round.name}{round.sequenceNumber ? ` (#${round.sequenceNumber})` : ''}</span>}
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="mb-0"
+                            />
+                          </div>
+                        );
+                      })}
+                    </Form>
+                  )}
+                </Tab>
+                <Tab eventKey="tracks" title={<span className="d-flex align-items-center gap-2"><Grid size={16} /> Tracks</span>}>
+                  <div className="text-muted small mb-3">Which thematic tracks will this judge cover?</div>
+                  {availableTracks.length === 0 ? (
+                    <div className="text-muted">No tracks available.</div>
+                  ) : (
+                    <Form className="d-flex flex-column gap-3">
+                      {availableTracks.map((track) => {
+                        const isSelected = selectedTracks.includes(track.id);
+                        return (
+                          <div
+                            key={track.id}
+                            className={`p-3 rounded border ${isSelected ? 'border-primary bg-primary bg-opacity-10' : 'border-light'}`}
+                            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                            onClick={() => handleToggleTrack(track.id)}
+                          >
+                            <Form.Check
+                              type="checkbox"
+                              id={`track-${track.id}`}
+                              label={<span className="fw-medium ms-2">{track.name}</span>}
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="mb-0"
+                            />
+                          </div>
+                        );
+                      })}
+                    </Form>
+                  )}
+                </Tab>
+              </Tabs>
             </Card.Body>
           </Card>
         </Col>

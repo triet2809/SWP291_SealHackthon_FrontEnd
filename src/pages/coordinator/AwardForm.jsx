@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { ArrowLeft, Trophy, DollarSign, Tag, CheckCircle, Users } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getPrize, createPrize, updatePrize, getEvents } from '../../api/hackathonApi';
+import { getPrize, createPrize, updatePrize, getEvents, getTeams } from '../../api/hackathonApi';
 
 const listOf = (data) => data?.content || data || [];
 
@@ -17,9 +17,11 @@ const AwardForm = () => {
     category: 'Overall',
     status: 'Unassigned',
     winner: '',
+    teamId: '',
     eventId: ''
   });
   const [events, setEvents] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,8 +45,11 @@ const AwardForm = () => {
             category: prize.trackName || 'Overall',
             status: prize.teamId ? 'Assigned' : 'Unassigned',
             winner: prize.teamName || '',
+            teamId: prize.teamId || '',
             eventId: prize.eventId || ''
           });
+          const teamData = await getTeams({ eventId: prize.eventId, size: 200 });
+          if (active) setTeams(listOf(teamData));
         } else if (evList.length === 1) {
           setAward((prev) => ({ ...prev, eventId: evList[0].id }));
         }
@@ -80,7 +85,13 @@ const AwardForm = () => {
         description: award.prize
       };
       if (isEditing) {
-        await updatePrize(id, { name: award.name, description: award.prize });
+        const patch = { name: award.name, description: award.prize };
+        // Winner assignment: set team + awardedAt, or clear both when unassigned.
+        if (award.teamId) {
+          patch.teamId = award.teamId;
+          patch.awardedAt = new Date().toISOString().slice(0, 19);
+        }
+        await updatePrize(id, patch);
       } else {
         await createPrize(payload);
       }
@@ -169,25 +180,23 @@ const AwardForm = () => {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-medium d-flex align-items-center gap-2"><CheckCircle size={16} className="text-primary"/> Status</Form.Label>
-                        <Form.Select name="status" value={award.status} onChange={handleChange} disabled>
-                          <option>Unassigned</option>
-                          <option>Voting Active</option>
-                          <option>Assigned</option>
-                        </Form.Select>
-                        <Form.Text className="text-muted">Winner assignment is managed on the backend.</Form.Text>
+                        <Form.Control type="text" value={award.teamId ? 'Assigned' : 'Unassigned'} disabled />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-medium d-flex align-items-center gap-2"><Users size={16} className="text-secondary"/> Winner (Team Name)</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="winner"
-                          placeholder="Assigned via backend"
-                          value={award.winner}
-                          onChange={handleChange}
-                          disabled
-                        />
+                        <Form.Label className="fw-medium d-flex align-items-center gap-2"><Users size={16} className="text-secondary"/> Winner (Team)</Form.Label>
+                        {isEditing ? (
+                          <Form.Select name="teamId" value={award.teamId} onChange={handleChange}>
+                            <option value="">— No winner (unassigned) —</option>
+                            {teams.map((t) => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                          </Form.Select>
+                        ) : (
+                          <Form.Control type="text" value="Save award first, then assign a winner" disabled />
+                        )}
+                        <Form.Text className="text-muted">Select the winning team to award this prize.</Form.Text>
                       </Form.Group>
                     </Col>
                   </Row>

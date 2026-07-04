@@ -34,6 +34,16 @@ export function getPendingUsers() {
   return getUsers({ status: 'pending' });
 }
 
+export async function createUser(payload) {
+  const result = await apiPost('/users', payload);
+  return { ...result, value: result.data ?? null };
+}
+
+export async function updateUserProfile(userId, payload) {
+  const result = await apiPatch(`/users/${userId}/profile`, payload);
+  return { ...result, value: result.data ?? null };
+}
+
 export async function updateUserStatus(userId, status) {
   const result = await apiPatch(`/users/${userId}/status`, { status });
   return { ...result, value: result.data ?? null };
