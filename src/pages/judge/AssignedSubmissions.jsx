@@ -18,6 +18,7 @@ const AssignedSubmissions = () => {
 
   useEffect(() => {
     markAllNotificationsRead('submissions').catch(() => {});
+    markAllNotificationsRead('assignments').catch(() => {});
     if (!judgeId) {
       setError('No logged-in judge found.');
       setLoading(false);

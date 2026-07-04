@@ -35,9 +35,10 @@ const CATEGORY_BY_PATH = {
   '/team/join-requests': 'join_requests',
   '/team/support': 'my_support',
   '/team/submissions': 'my_requests',
+  '/team/my-team': 'mentor_feedback',
   '/student/join-team': 'my_requests',
   '/coordinator/support': 'support',
-  '/judge/submissions': 'submissions',
+  '/judge/submissions': ['assignments', 'submissions'],
   '/mentor/review': 'submissions',
 };
 
@@ -173,7 +174,8 @@ const Sidebar = ({ role }) => {
       <nav className={styles.nav}>
         {links.map((link, index) => {
           const cat = CATEGORY_BY_PATH[link.path];
-          const count = cat ? (unread[cat] || 0) : 0;
+          const cats = cat == null ? [] : (Array.isArray(cat) ? cat : [cat]);
+          const count = cats.reduce((sum, c) => sum + (unread[c] || 0), 0);
           return (
             <NavLink 
               key={index} 

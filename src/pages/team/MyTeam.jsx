@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, ProgressBar, Spinner, Alert, Button, Modal } from 'react-bootstrap';
-import { Code, Globe, FileText, ExternalLink, Key, Copy, Check, LogOut } from 'lucide-react';
+import { Code, Globe, FileText, ExternalLink, Key, Copy, Check, LogOut, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getMyTeams, getTrack, getSubmissions, leaveTeam } from '../../api/hackathonApi';
+import { getMyTeams, getTrack, getSubmissions, leaveTeam, getMentorFeedbacks, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 import styles from './MyTeam.module.css';
 
@@ -14,11 +14,14 @@ const MyTeam = () => {
   const [team, setTeam] = useState(null);
   const [trackName, setTrackName] = useState('');
   const [submission, setSubmission] = useState(null);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [copied, setCopied] = useState(false);
   const [showLeave, setShowLeave] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    // Opening My Team clears the mentor-feedback red dot.
+    markAllNotificationsRead('mentor_feedback').catch(() => {});
     let active = true;
     (async () => {
       try {
@@ -39,6 +42,11 @@ const MyTeam = () => {
             const subList = subs?.content || subs || [];
             if (active) setSubmission(subList[0] || null);
           } catch { /* submission optional */ }
+          try {
+            const fbRes = await getMentorFeedbacks({ teamId: current.id, size: 100 });
+            const fbList = fbRes?.content || fbRes || [];
+            if (active) setFeedbacks(fbList.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
+          } catch { /* feedback optional */ }
         }
       } catch (e) {
         if (active) setError(e.message || 'Failed to load team');
@@ -145,7 +153,7 @@ const MyTeam = () => {
       <Row className="g-4">
         {/* Left Column: Project Overview */}
         <Col lg={8}>
-          <Card className="h-100 border-0 shadow-sm">
+          <Card className="mb-4 border-0 shadow-sm">
             <Card.Body className="p-4">
               <h5 className={styles.cardTitle}>Project Overview</h5>
 
@@ -180,6 +188,33 @@ const MyTeam = () => {
                   style={{ height: '6px' }}
                 />
               </div>
+            </Card.Body>
+          </Card>
+
+          {/* Mentor feedback — read-only for the team */}
+          <Card className="border-0 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <MessageSquare size={20} className="text-primary" />
+                <h5 className={styles.cardTitle} style={{ marginBottom: 0 }}>Feedback từ Mentor</h5>
+              </div>
+              {feedbacks.length === 0 ? (
+                <div className="text-muted small">Chưa có feedback từ mentor.</div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {feedbacks.map((fb) => (
+                    <div key={fb.id} className="p-3 rounded" style={{ backgroundColor: 'var(--cf-bg-main)', border: '1px solid var(--cf-border-color)' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="fw-bold small text-primary">{fb.mentorEmail || 'Mentor'}</span>
+                        <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}{fb.roundName ? ` · ${fb.roundName}` : ''}
+                        </span>
+                      </div>
+                      <p className="mb-0 text-muted small" style={{ lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{fb.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
