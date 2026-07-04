@@ -474,6 +474,44 @@ export async function joinTeamByInviteCode(inviteCode) {
   return res.data;
 }
 
+// --- Team join requests (request-to-join flow) ---
+
+export async function createJoinRequest(teamId, message) {
+  const res = await apiPost('/join-requests', { teamId, message: message || null });
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to send join request');
+  return res.data;
+}
+
+export async function getTeamJoinRequests(teamId, status) {
+  const qs = new URLSearchParams({ teamId, ...(status ? { status } : {}) }).toString();
+  const res = await apiGet(`/join-requests?${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load join requests');
+  return res.data;
+}
+
+export async function getMyJoinRequests() {
+  const res = await apiGet('/join-requests/mine');
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load your join requests');
+  return res.data;
+}
+
+export async function acceptJoinRequest(id) {
+  const res = await apiPost(`/join-requests/${id}/accept`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to accept join request');
+  return res.data;
+}
+
+export async function rejectJoinRequest(id) {
+  const res = await apiPost(`/join-requests/${id}/reject`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to reject join request');
+  return res.data;
+}
+
+export async function cancelJoinRequest(id) {
+  const res = await apiDelete(`/join-requests/${id}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to cancel join request');
+}
+
 export async function getTeamChatMessages(teamId) {
   const res = await apiGet(`/team-chat?teamId=${encodeURIComponent(teamId)}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load team chat');

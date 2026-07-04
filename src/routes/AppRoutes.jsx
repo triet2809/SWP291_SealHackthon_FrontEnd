@@ -17,6 +17,7 @@ import TeamDashboard from '../pages/team/TeamDashboard';
 import TrackTopic from '../pages/team/TrackTopic';
 import CreateTeam from '../pages/team/CreateTeam';
 import JoinTeam from '../pages/team/JoinTeam';
+import JoinRequests from '../pages/team/JoinRequests';
 import MyTeam from '../pages/team/MyTeam';
 import TeamMembers from '../pages/team/TeamMembers';
 import SubmissionManagement from '../pages/team/SubmissionManagement';
@@ -100,6 +101,7 @@ const AppRoutes = () => {
           <Route path="topic" element={<TrackTopic />} />
           <Route path="my-team" element={<MyTeam />} />
           <Route path="members" element={<TeamMembers />} />
+          <Route path="join-requests" element={<JoinRequests />} />
           <Route path="chat" element={<TeamChat />} />
           <Route path="submissions" element={<SubmissionManagement />} />
           <Route path="history" element={<SubmissionHistory />} />

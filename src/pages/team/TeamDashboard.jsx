@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
-import { Clock, Users, FileText, Award, Calendar, CheckCircle } from 'lucide-react';
+import { Clock, Users, FileText, Award, Calendar, CheckCircle, Key, Copy, Check } from 'lucide-react';
 import { getMyTeams, getTrack, getRounds, getSubmissions, getNotices } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 import StatCard from '../../components/ui/StatCard';
@@ -15,6 +15,7 @@ const TeamDashboard = () => {
   const [rounds, setRounds] = useState([]);
   const [submission, setSubmission] = useState(null);
   const [notices, setNotices] = useState([]);
+  const [copied, setCopied] = useState(false);
 
   const user = getStoredUser();
   const firstName = (user?.fullName || 'there').split(' ')[0];
@@ -77,6 +78,15 @@ const TeamDashboard = () => {
     : '—';
   const submissionStatus = submission ? 'Submitted' : 'Draft';
 
+  const copyCode = async () => {
+    if (!team?.inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(team.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard blocked */ }
+  };
+
   return (
     <div className={styles.dashboard}>
       <div className="mb-4">
@@ -87,6 +97,23 @@ const TeamDashboard = () => {
       </div>
 
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
+      {team?.inviteCode && (
+        <Card className="mb-4" style={{ border: '1px solid var(--cf-border-color)', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)' }}>
+          <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div className="d-flex align-items-center gap-2">
+              <Key size={18} className="text-primary" />
+              <span className="text-muted">Mã mời team:</span>
+              <span className="fw-bold text-primary" style={{ letterSpacing: '2px', fontSize: '1.1rem' }}>{team.inviteCode}</span>
+              <button type="button" className="btn btn-link p-0 ms-1 text-secondary" onClick={copyCode} title="Copy">
+                {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+              </button>
+            </div>
+            <span className="text-muted small">Chia sẻ mã này để bạn bè tham gia team.</span>
+          </Card.Body>
+        </Card>
+      )}
+
 
       <Row className="g-4 mb-4">
         <Col md={3}>

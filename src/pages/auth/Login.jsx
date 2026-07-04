@@ -4,6 +4,7 @@ import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-b
 import { Zap, Users, Award, Calendar, ArrowRight } from 'lucide-react';
 import { users } from '../../data/mockData';
 import { login } from '../../api/authApi';
+import { getMyTeams } from '../../api/hackathonApi';
 import styles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -12,8 +13,21 @@ const routeByRole = (roles = []) => {
   if (r.includes('coordinator')) return '/coordinator/dashboard';
   if (r.includes('mentor')) return '/mentor/dashboard';
   if (r.includes('judge')) return '/judge/dashboard';
-  if (r.includes('team_leader') || r.includes('team_member')) return '/team/dashboard';
-  return '/team/dashboard';
+  // Participant landing is decided after checking team membership (see resolveParticipantRoute).
+  if (r.includes('team_leader') || r.includes('team_member')) return null;
+  return null;
+};
+
+// Participants with a team land in the team workspace; those without a team
+// land in the student area where they can create or join a team.
+const resolveParticipantRoute = async () => {
+  try {
+    const teams = await getMyTeams();
+    const list = Array.isArray(teams) ? teams : (teams?.content || []);
+    return list.length > 0 ? '/team/dashboard' : '/student/dashboard';
+  } catch {
+    return '/student/dashboard';
+  }
 };
 
 const Login = () => {
@@ -56,7 +70,9 @@ const Login = () => {
       localStorage.setItem('seal_refresh_token', auth.refreshToken || '');
       localStorage.setItem('seal_token_type', auth.tokenType || 'Bearer');
       localStorage.setItem('seal_user', JSON.stringify(auth.user || {}));
-      navigate(routeByRole(auth.user?.roles), { replace: true });
+      const staticRoute = routeByRole(auth.user?.roles);
+      const dest = staticRoute || await resolveParticipantRoute();
+      navigate(dest, { replace: true });
     } catch {
       setError('Không kết nối được tới server');
     } finally {

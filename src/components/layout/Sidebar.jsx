@@ -49,6 +49,7 @@ const Sidebar = ({ role }) => {
           { name: 'Track Topic', path: '/team/topic', icon: FileText },
           { name: 'My Team', path: '/team/my-team', icon: Users },
           { name: 'Team Members', path: '/team/members', icon: Users },
+          { name: 'Join Requests', path: '/team/join-requests', icon: UserPlus },
           { name: 'Team Chat', path: '/team/chat', icon: MessageSquare },
           { name: 'Submission Manage...', path: '/team/submissions', icon: Upload },
           { name: 'Submission History', path: '/team/history', icon: History },
