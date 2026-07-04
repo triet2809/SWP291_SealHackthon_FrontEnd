@@ -41,6 +41,10 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    if (password.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự');
+      return;
+    }
     if (password !== confirm) {
       setError('Mật khẩu nhập lại không khớp');
       return;
@@ -51,7 +55,14 @@ const Register = () => {
         ? await registerFpt({ fullName, email, password, studentId, campusId })
         : await registerExternal({ fullName, email, password, universityName });
       if (!res.ok) {
-        setError(res.data?.message || 'Đăng ký thất bại');
+        // Surface backend field-level validation errors (e.g. password too short,
+        // invalid email) instead of the generic "Validation failed" message.
+        const fieldErrors = res.data?.fieldErrors;
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          setError(Object.values(fieldErrors).join('. '));
+        } else {
+          setError(res.data?.message || 'Đăng ký thất bại');
+        }
         return;
       }
       navigate('/pending-approval');
@@ -155,7 +166,8 @@ const Register = () => {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Password</Form.Label>
-                    <Form.Control type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Form.Control type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+                    <Form.Text className="text-muted">Tối thiểu 8 ký tự</Form.Text>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
