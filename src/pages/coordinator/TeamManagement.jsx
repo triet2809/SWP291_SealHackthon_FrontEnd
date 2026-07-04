@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
+import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert, Modal } from 'react-bootstrap';
 import { Search, Eye, Ban, RotateCcw, Plus, Shuffle } from 'lucide-react';
-import { getTeams, getTracks, getSubmissions, disqualifyTeam, reactivateTeam } from '../../api/hackathonApi';
+import { getTeams, getTracks, getSubmissions, disqualifyTeam, reactivateTeam, moveTeamTrack } from '../../api/hackathonApi';
 import { useNavigate } from 'react-router-dom';
 import { getInitials } from '../../utils/authUser';
 
@@ -18,6 +18,10 @@ const TeamManagement = () => {
   const [teams, setTeams] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [subsByTeam, setSubsByTeam] = useState({});
+  // Move-track modal state
+  const [moveTeam, setMoveTeam] = useState(null);
+  const [moveTargetTrack, setMoveTargetTrack] = useState('');
+  const [moving, setMoving] = useState(false);
 
   const trackName = (trackId) => tracks.find((t) => t.id === trackId)?.name || 'Unassigned';
   // Project = team's submission projectName if available, else team name.
@@ -72,6 +76,33 @@ const TeamManagement = () => {
       await loadTeams();
     } catch (err) {
       setError(err.message || 'Failed to reactivate team');
+    }
+  };
+
+  const openMoveModal = (team) => {
+    setMoveTeam(team);
+    setMoveTargetTrack('');
+  };
+
+  // Only tracks in the SAME event as the team can be move targets.
+  const trackEventId = (trackId) => tracks.find((t) => t.id === trackId)?.eventId;
+  const moveCandidateTracks = moveTeam
+    ? tracks.filter((t) => t.eventId === trackEventId(moveTeam.trackId) && t.id !== moveTeam.trackId)
+    : [];
+
+  const handleMoveTrack = async () => {
+    if (!moveTeam || !moveTargetTrack) return;
+    try {
+      setMoving(true);
+      setError('');
+      await moveTeamTrack(moveTeam.id, moveTargetTrack);
+      setMoveTeam(null);
+      setMoveTargetTrack('');
+      await loadTeams();
+    } catch (err) {
+      setError(err.message || 'Failed to move team');
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -168,6 +199,9 @@ const TeamManagement = () => {
                         <Button variant="outline-primary" size="sm" onClick={() => navigate(`/coordinator/teams/${team.id}`)}>
                           <Eye size={14} />
                         </Button>
+                        <Button variant="outline-secondary" size="sm" onClick={() => openMoveModal(team)} title="Move to another track">
+                          <Shuffle size={14} />
+                        </Button>
                         {disqualified ? (
                           <Button variant="outline-success" size="sm" onClick={() => handleReactivateTeam(team.id)} title="Reactivate">
                             <RotateCcw size={14} />
@@ -186,6 +220,35 @@ const TeamManagement = () => {
           </Table>
         </div>
       </Card>
+
+      <Modal show={!!moveTeam} onHide={() => setMoveTeam(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="h5">Move Team to Another Track</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-3">
+            Moving <strong>{moveTeam?.name}</strong> from <Badge bg="secondary">{trackName(moveTeam?.trackId)}</Badge> to another track in the same event.
+          </p>
+          <Form.Group>
+            <Form.Label className="fw-medium">Target Track</Form.Label>
+            <Form.Select value={moveTargetTrack} onChange={(e) => setMoveTargetTrack(e.target.value)}>
+              <option value="">Select a track...</option>
+              {moveCandidateTracks.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </Form.Select>
+            {moveCandidateTracks.length === 0 && (
+              <Form.Text className="text-muted">No other tracks available in this event.</Form.Text>
+            )}
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setMoveTeam(null)} disabled={moving}>Cancel</Button>
+          <Button variant="primary" onClick={handleMoveTrack} disabled={moving || !moveTargetTrack}>
+            {moving ? 'Moving...' : 'Move Team'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

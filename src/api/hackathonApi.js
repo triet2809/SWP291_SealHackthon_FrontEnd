@@ -193,6 +193,12 @@ export async function updateTeam(id, payload) {
   return res.data;
 }
 
+export async function moveTeamTrack(id, trackId) {
+  const res = await apiPost(`/teams/${id}/move-track`, { trackId });
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to move team to track');
+  return res.data;
+}
+
 export async function addTeamMember(teamId, payload) {
   const res = await apiPost(`/teams/${teamId}/members`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to add team member');
