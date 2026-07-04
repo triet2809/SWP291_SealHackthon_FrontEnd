@@ -529,3 +529,16 @@ export async function createSupportTicket(payload) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to submit ticket');
   return res.data;
 }
+
+export async function getSupportTickets(requesterId) {
+  const qs = requesterId ? `?requesterId=${encodeURIComponent(requesterId)}` : '';
+  const res = await apiGet(`/support-tickets${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load support tickets');
+  return res.data;
+}
+
+export async function updateSupportTicketStatus(id, status) {
+  const res = await apiPatch(`/support-tickets/${id}/status`, { status });
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to update ticket status');
+  return res.data;
+}

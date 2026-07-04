@@ -26,6 +26,7 @@ import NoticeBoard from '../pages/team/NoticeBoard';
 import DeadlinesSchedule from '../pages/team/DeadlinesSchedule';
 import Profile from '../pages/team/Profile';
 import SupportTicket from '../pages/team/SupportTicket';
+import SupportTickets from '../pages/coordinator/SupportTickets';
 import TeamScoreDetails from '../pages/team/TeamScoreDetails';
 import TeamChat from '../pages/team/TeamChat';
 import ComingSoon from '../pages/ComingSoon';
@@ -169,6 +170,7 @@ const AppRoutes = () => {
           <Route path="incidents/:id" element={<IncidentReportDetail />} />
           <Route path="reports" element={<Reports />} />
           <Route path="logs" element={<AuditLogs />} />
+          <Route path="support" element={<SupportTickets />} />
           <Route path="profile" element={<CoordinatorProfile />} />
         </Route>
 

@@ -20,7 +20,8 @@ import {
   Star,
   Clock,
   AlertTriangle,
-  BarChart2
+  BarChart2,
+  LifeBuoy
 } from 'lucide-react';
 import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
@@ -97,6 +98,7 @@ const Sidebar = ({ role }) => {
           { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
           { name: 'Reports', path: '/coordinator/reports', icon: FileText },
           { name: 'Audit Logs', path: '/coordinator/logs', icon: History },
+          { name: 'Support Tickets', path: '/coordinator/support', icon: LifeBuoy },
           { name: 'Profile', path: '/coordinator/profile', icon: User },
         ];
       default:
