@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, Users, Target, Plus, Eye, CheckCircle, Clock } fro
 import { useNavigate, useParams } from 'react-router-dom';
 import TrackGeneratorModal from '../../components/coordinator/TrackGeneratorModal';
 import {
-  getEvent, getTracks, getRounds, getTeams, createRound, createTrack,
+  getEvent, getTracks, getRounds, getTeams, createRound, createTrack, updateTrack,
 } from '../../api/hackathonApi';
 
 const listOf = (data) => data?.content || data || [];
@@ -87,16 +87,29 @@ const EventDetails = () => {
 
   // Track generator -> creates BE tracks for this event (one per name).
   // Team distribution has no BE endpoint; teams get a trackId when created (BE gap).
-  const handleGenerateTracks = async (category, trackNames) => {
+  const handleGenerateTracks = async (category, trackNames, _teams, maxTeams = null) => {
     try {
       setError('');
       await Promise.all(
-        trackNames.filter(Boolean).map((name) => createTrack({ eventId: id, name, description: '' }))
+        trackNames.filter(Boolean).map((name) => createTrack({ eventId: id, name, description: '', maxTeams }))
       );
       await loadAll();
       alert(`Created ${trackNames.filter(Boolean).length} tracks!`);
     } catch (err) {
       setError(err.message || 'Failed to create tracks');
+    }
+  };
+
+  // Inline edit of a track's capacity (null = unlimited).
+  const handleUpdateTrackCap = async (track, raw) => {
+    const val = raw === '' || raw == null ? null : parseInt(raw, 10);
+    if (val != null && (Number.isNaN(val) || val < 1)) { setError('Max teams phải là số dương hoặc để trống.'); return; }
+    try {
+      setError('');
+      await updateTrack(track.id, { name: track.name, description: track.description || '', maxTeams: val });
+      await loadAll();
+    } catch (err) {
+      setError(err.message || 'Failed to update track');
     }
   };
 
@@ -171,8 +184,7 @@ const EventDetails = () => {
         <div 
           className={`cursor-pointer fw-medium pb-2 ${activeTab === 'Rounds' ? 'text-primary border-bottom border-primary border-2' : 'text-muted'}`}
           onClick={() => setActiveTab('Rounds')}
-          style={{ cursor: 'pointer' }}
-        >
+          style={{ cursor: 'pointer' }}        >
           Event Rounds & Tracks
         </div>
         <div 
@@ -181,6 +193,13 @@ const EventDetails = () => {
           style={{ cursor: 'pointer' }}
         >
           Participating Teams
+        </div>
+        <div 
+          className={`cursor-pointer fw-medium pb-2 ${activeTab === 'Tracks' ? 'text-primary border-bottom border-primary border-2' : 'text-muted'}`}
+          onClick={() => setActiveTab('Tracks')}
+          style={{ cursor: 'pointer' }}
+        >
+          Tracks
         </div>
       </div>
 
@@ -254,6 +273,56 @@ const EventDetails = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </Table>
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'Tracks' && (
+        <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 className="fw-bold mb-0">Tracks & Capacity</h5>
+            <Button variant="outline-primary" size="sm" onClick={() => setShowGeneratorModal(true)}>Create Tracks</Button>
+          </div>
+          <div className="table-responsive">
+            <Table className="mb-0 align-middle" hover>
+              <thead>
+                <tr>
+                  <th className="border-top-0 border-bottom text-muted py-3">Track</th>
+                  <th className="border-top-0 border-bottom text-muted py-3 text-center">Teams</th>
+                  <th className="border-top-0 border-bottom text-muted py-3" style={{ width: '220px' }}>Max teams (trống = ∞)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tracks.length === 0 ? (
+                  <tr><td colSpan={3} className="text-center py-4 text-muted">No tracks yet.</td></tr>
+                ) : tracks.map((t) => {
+                  const count = t.teamCount ?? teams.filter((tm) => tm.trackId === t.id).length;
+                  const full = t.maxTeams != null && count >= t.maxTeams;
+                  return (
+                    <tr key={t.id}>
+                      <td className="fw-bold py-3" style={{ color: 'var(--cf-text-primary)' }}>{t.name}</td>
+                      <td className="py-3 text-center">
+                        <Badge bg={full ? 'danger' : 'secondary'}>{count}{t.maxTeams != null ? `/${t.maxTeams}` : ''}{full ? ' · full' : ''}</Badge>
+                      </td>
+                      <td className="py-3">
+                        <Form.Control
+                          type="number"
+                          min="1"
+                          size="sm"
+                          defaultValue={t.maxTeams ?? ''}
+                          placeholder="∞"
+                          onBlur={(e) => {
+                            const raw = e.target.value;
+                            const cur = t.maxTeams == null ? '' : String(t.maxTeams);
+                            if (raw !== cur) handleUpdateTrackCap(t, raw);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </Table>
           </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Badge, Spinner, Alert, Table } from 'react-bootstrap';
 import { Check, X, Inbox, Users } from 'lucide-react';
-import { getMyTeams, getTeamJoinRequests, acceptJoinRequest, rejectJoinRequest } from '../../api/hackathonApi';
+import { getMyTeams, getTeamJoinRequests, acceptJoinRequest, rejectJoinRequest, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 
 const JoinRequests = () => {
@@ -20,6 +20,7 @@ const JoinRequests = () => {
   };
 
   useEffect(() => {
+    markAllNotificationsRead('join_requests').catch(() => {});
     let active = true;
     (async () => {
       try {

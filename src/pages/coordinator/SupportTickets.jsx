@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Badge, Spinner, Alert, Form, Button } from 'react-bootstrap';
 import { LifeBuoy, Inbox } from 'lucide-react';
-import { getSupportTickets, updateSupportTicketStatus } from '../../api/hackathonApi';
+import { getSupportTickets, updateSupportTicketStatus, markAllNotificationsRead } from '../../api/hackathonApi';
 
 const CATEGORY_LABELS = {
   technical: 'Kỹ thuật / Nền tảng',
@@ -40,7 +40,7 @@ const SupportTickets = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); markAllNotificationsRead('support').catch(() => {}); }, []);
 
   const handleStatusChange = async (ticket, status) => {
     setUpdating((prev) => ({ ...prev, [ticket.id]: true }));

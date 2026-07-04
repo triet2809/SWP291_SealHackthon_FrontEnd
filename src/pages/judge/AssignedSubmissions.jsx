@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { getJudgeSubmissions, getScores } from '../../api/hackathonApi';
+import { getJudgeSubmissions, getScores, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
 import styles from './AssignedSubmissions.module.css';
 
@@ -17,6 +17,7 @@ const AssignedSubmissions = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    markAllNotificationsRead('submissions').catch(() => {});
     if (!judgeId) {
       setError('No logged-in judge found.');
       setLoading(false);

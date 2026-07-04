@@ -474,6 +474,37 @@ export async function joinTeamByInviteCode(inviteCode) {
   return res.data;
 }
 
+export async function leaveTeam(teamId) {
+  const res = await apiPost(`/teams/${teamId}/leave`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to leave team');
+  return res.data;
+}
+
+// --- Notifications (red-dot / unread counts) ---
+
+export async function getNotifications(unreadOnly = false) {
+  const res = await apiGet(`/notifications${unreadOnly ? '?unreadOnly=true' : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load notifications');
+  return res.data;
+}
+
+export async function getUnreadSummary() {
+  const res = await apiGet('/notifications/unread-summary');
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load unread summary');
+  return res.data;
+}
+
+export async function markNotificationRead(id) {
+  const res = await apiPost(`/notifications/${id}/read`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to mark notification read');
+}
+
+export async function markAllNotificationsRead(category) {
+  const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+  const res = await apiPost(`/notifications/read-all${qs}`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to mark notifications read');
+}
+
 // --- Team join requests (request-to-join flow) ---
 
 export async function createJoinRequest(teamId, message) {

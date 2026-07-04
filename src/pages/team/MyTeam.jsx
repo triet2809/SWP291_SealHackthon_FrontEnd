@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, ProgressBar, Spinner, Alert } from 'react-bootstrap';
-import { Code, Globe, FileText, ExternalLink } from 'lucide-react';
-import { getMyTeams, getTrack, getSubmissions } from '../../api/hackathonApi';
+import { Row, Col, Card, ProgressBar, Spinner, Alert, Button, Modal } from 'react-bootstrap';
+import { Code, Globe, FileText, ExternalLink, Key, Copy, Check, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getMyTeams, getTrack, getSubmissions, leaveTeam } from '../../api/hackathonApi';
+import { getStoredUser } from '../../utils/authUser';
 import styles from './MyTeam.module.css';
 
 const MyTeam = () => {
+  const navigate = useNavigate();
+  const currentUser = getStoredUser() || {};
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [team, setTeam] = useState(null);
   const [trackName, setTrackName] = useState('');
   const [submission, setSubmission] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [showLeave, setShowLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -51,6 +58,30 @@ const MyTeam = () => {
     }
   };
 
+  const copyCode = async () => {
+    if (!team?.inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(team.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard blocked */ }
+  };
+
+  const handleLeave = async () => {
+    setLeaving(true);
+    setError('');
+    try {
+      await leaveTeam(team.id);
+      // No longer on a team -> back to the student area to create/join another.
+      navigate('/student/dashboard', { replace: true });
+    } catch (e) {
+      setError(e.message || 'Rời team thất bại');
+      setShowLeave(false);
+    } finally {
+      setLeaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-5 text-center">
@@ -87,6 +118,29 @@ const MyTeam = () => {
           {team.name}{trackName ? ` · ${trackName}` : ''}
         </div>
       </div>
+
+      {error && <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-3">{error}</Alert>}
+
+      {/* Invite code + leave controls */}
+      <Card className="mb-4 border-0 shadow-sm">
+        <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-2">
+            <Key size={18} className="text-primary" />
+            <span className="text-muted">Mã mời:</span>
+            {team.inviteCode ? (
+              <>
+                <span className="fw-bold text-primary" style={{ letterSpacing: '2px', fontSize: '1.1rem' }}>{team.inviteCode}</span>
+                <Button variant="link" className="p-0 ms-1 text-secondary" onClick={copyCode} title="Copy">
+                  {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+                </Button>
+              </>
+            ) : <span className="text-muted">—</span>}
+          </div>
+          <Button variant="outline-danger" size="sm" className="d-flex align-items-center gap-1" onClick={() => setShowLeave(true)}>
+            <LogOut size={16} /> Rời team
+          </Button>
+        </Card.Body>
+      </Card>
 
       <Row className="g-4">
         {/* Left Column: Project Overview */}
@@ -171,6 +225,32 @@ const MyTeam = () => {
           </Card>
         </Col>
       </Row>
+
+      <Modal show={showLeave} onHide={() => !leaving && setShowLeave(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Rời team?</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {(() => {
+            const me = (team.members || []).find((m) => m.userId === currentUser.id);
+            const isLeader = me && String(me.role).toLowerCase() === 'leader';
+            const count = (team.members || []).length;
+            if (isLeader && count > 1) {
+              return <span>Bạn là leader. Khi rời, quyền leader sẽ chuyển cho thành viên vào sớm nhất. Bạn chắc chắn?</span>;
+            }
+            if (count <= 1) {
+              return <span>Bạn là thành viên duy nhất. Rời team sẽ <strong>xóa team</strong> này. Bạn chắc chắn?</span>;
+            }
+            return <span>Bạn chắc chắn muốn rời team này?</span>;
+          })()}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowLeave(false)} disabled={leaving}>Hủy</Button>
+          <Button variant="danger" onClick={handleLeave} disabled={leaving} className="d-flex align-items-center gap-2">
+            {leaving ? <Spinner animation="border" size="sm" /> : <LogOut size={16} />} Rời team
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
-import { getMentorTeams, getSubmissions } from '../../api/hackathonApi';
+import { getMentorTeams, getSubmissions, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 import styles from './SubmissionReview.module.css';
 
@@ -16,6 +16,7 @@ const SubmissionReview = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    markAllNotificationsRead('submissions').catch(() => {});
     let active = true;
     async function load() {
       if (!mentorId) {

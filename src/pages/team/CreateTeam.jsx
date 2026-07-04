@@ -2,11 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Trash2, Users, Save, AlertTriangle, Key, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getTracks, createTeam } from '../../api/hackathonApi';
+import { getEvents, getTracks, createTeam } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 
 const MAX_MEMBERS = 5; // leader + up to 4 teammates
 const MAX_EMAIL_SLOTS = MAX_MEMBERS - 1; // 4 email slots
+
+const trackIsFull = (t) => t.maxTeams != null && (t.teamCount ?? 0) >= t.maxTeams;
+const trackLabel = (t) => {
+  const cap = t.maxTeams != null ? `${t.teamCount ?? 0}/${t.maxTeams}` : `${t.teamCount ?? 0}/∞`;
+  return `${t.name} (${cap}${trackIsFull(t) ? ' – đầy' : ''})`;
+};
 
 const CreateTeam = () => {
   const navigate = useNavigate();
@@ -14,13 +20,17 @@ const CreateTeam = () => {
   const [createdTeam, setCreatedTeam] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [tracks, setTracks] = useState([]);
-  const [tracksLoading, setTracksLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  // Event-first: only events with registration open (status=published) are selectable.
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [tracks, setTracks] = useState([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
 
   const currentUser = getStoredUser() || {};
 
-  const [teamData, setTeamData] = useState({ name: '', trackId: '' });
+  const [teamData, setTeamData] = useState({ name: '', eventId: '', trackId: '' });
   // One email slot shown by default (person #2). "+" adds up to 3 more (person #3/#4/#5).
   const [memberEmails, setMemberEmails] = useState(['']);
 
@@ -28,11 +38,30 @@ const CreateTeam = () => {
     let active = true;
     (async () => {
       try {
-        const res = await getTracks({ size: 100 });
+        const res = await getEvents({ status: 'published', size: 100 });
+        const list = res?.content || res || [];
+        if (!active) return;
+        setEvents(list);
+      } catch (e) {
+        if (active) setError(e.message || 'Failed to load events');
+      } finally {
+        if (active) setEventsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  // When an event is picked, load its tracks (with capacity info).
+  useEffect(() => {
+    if (!teamData.eventId) { setTracks([]); return; }
+    let active = true;
+    setTracksLoading(true);
+    (async () => {
+      try {
+        const res = await getTracks({ eventId: teamData.eventId, size: 100 });
         const list = res?.content || res || [];
         if (!active) return;
         setTracks(list);
-        if (list.length) setTeamData((prev) => ({ ...prev, trackId: prev.trackId || list[0].id }));
       } catch (e) {
         if (active) setError(e.message || 'Failed to load tracks');
       } finally {
@@ -40,11 +69,15 @@ const CreateTeam = () => {
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [teamData.eventId]);
 
   const handleTeamChange = (e) => {
     const { name, value } = e.target;
-    setTeamData((prev) => ({ ...prev, [name]: value }));
+    setTeamData((prev) => {
+      // Changing the event clears the previously selected track.
+      if (name === 'eventId') return { ...prev, eventId: value, trackId: '' };
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleEmailChange = (idx, value) => {
@@ -63,7 +96,10 @@ const CreateTeam = () => {
     e.preventDefault();
     setError('');
     if (!teamData.name.trim()) { setError('Vui lòng nhập tên team.'); return; }
+    if (!teamData.eventId) { setError('Vui lòng chọn sự kiện đang mở đăng ký.'); return; }
     if (!teamData.trackId) { setError('Vui lòng chọn track.'); return; }
+    const chosenTrack = tracks.find((t) => t.id === teamData.trackId);
+    if (chosenTrack && trackIsFull(chosenTrack)) { setError('Track này đã đầy, vui lòng chọn track khác.'); return; }
 
     const emails = memberEmails.map((s) => s.trim()).filter(Boolean);
     // Basic email format check for filled slots.
@@ -161,12 +197,26 @@ const CreateTeam = () => {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
+                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Sự kiện *</Form.Label>
+                    <Form.Select name="eventId" value={teamData.eventId} onChange={handleTeamChange} disabled={eventsLoading} required>
+                      <option value="">{eventsLoading ? 'Đang tải sự kiện...' : 'Chọn sự kiện đang mở đăng ký...'}</option>
+                      {events.map((ev) => (
+                        <option key={ev.id} value={ev.id}>{ev.title}{ev.term ? ` · ${ev.term}` : ''}</option>
+                      ))}
+                    </Form.Select>
+                    {!eventsLoading && events.length === 0 && (
+                      <Form.Text className="text-danger">Hiện không có sự kiện nào đang mở đăng ký.</Form.Text>
+                    )}
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
                     <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Track *</Form.Label>
-                    <Form.Select name="trackId" value={teamData.trackId} onChange={handleTeamChange} disabled={tracksLoading} required>
-                      {tracksLoading && <option>Đang tải track...</option>}
-                      {!tracksLoading && tracks.length === 0 && <option value="">Không có track khả dụng</option>}
+                    <Form.Select name="trackId" value={teamData.trackId} onChange={handleTeamChange} disabled={!teamData.eventId || tracksLoading} required>
+                      <option value="">
+                        {!teamData.eventId ? 'Chọn sự kiện trước' : (tracksLoading ? 'Đang tải track...' : (tracks.length === 0 ? 'Sự kiện chưa có track' : 'Chọn track...'))}
+                      </option>
                       {tracks.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
+                        <option key={t.id} value={t.id} disabled={trackIsFull(t)}>{trackLabel(t)}</option>
                       ))}
                     </Form.Select>
                   </Form.Group>

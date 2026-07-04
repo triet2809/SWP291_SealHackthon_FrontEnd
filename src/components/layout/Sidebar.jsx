@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -27,7 +27,19 @@ import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
 import { Badge } from 'react-bootstrap';
 import { logout } from '../../api/authApi';
+import { getUnreadSummary } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
+
+// Which notification category lights up which menu path (red dot).
+const CATEGORY_BY_PATH = {
+  '/team/join-requests': 'join_requests',
+  '/team/support': 'my_support',
+  '/team/submissions': 'my_requests',
+  '/student/join-team': 'my_requests',
+  '/coordinator/support': 'support',
+  '/judge/submissions': 'submissions',
+  '/mentor/review': 'submissions',
+};
 
 const Sidebar = ({ role }) => {
   const navigate = useNavigate();
@@ -108,6 +120,24 @@ const Sidebar = ({ role }) => {
 
   const links = getLinks();
 
+  // Poll unread notification counts -> red dots on the matching menu items.
+  const [unread, setUnread] = useState({});
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const summary = await getUnreadSummary();
+        if (active) setUnread(summary?.byCategory || {});
+      } catch { /* not logged in / transient; keep last */ }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    // Refresh when the tab regains focus so dots clear promptly after reading.
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
+    return () => { active = false; clearInterval(t); window.removeEventListener('focus', onFocus); };
+  }, [role]);
+
   const handleLogout = async () => {
     try { await logout(); } catch { /* local clear still proceeds */ }
     localStorage.removeItem('seal_access_token');
@@ -141,18 +171,44 @@ const Sidebar = ({ role }) => {
       </div>
 
       <nav className={styles.nav}>
-        {links.map((link, index) => (
-          <NavLink 
-            key={index} 
-            to={link.path} 
-            className={({ isActive }) => 
-              `${styles.navItem} ${isActive ? styles.active : ''}`
-            }
-          >
-            <link.icon className={styles.icon} size={18} />
-            <span>{link.name}</span>
-          </NavLink>
-        ))}
+        {links.map((link, index) => {
+          const cat = CATEGORY_BY_PATH[link.path];
+          const count = cat ? (unread[cat] || 0) : 0;
+          return (
+            <NavLink 
+              key={index} 
+              to={link.path} 
+              className={({ isActive }) => 
+                `${styles.navItem} ${isActive ? styles.active : ''}`
+              }
+            >
+              <link.icon className={styles.icon} size={18} />
+              <span>{link.name}</span>
+              {count > 0 && (
+                <span
+                  title={`${count} mới`}
+                  style={{
+                    marginLeft: 'auto',
+                    minWidth: '18px',
+                    height: '18px',
+                    padding: '0 5px',
+                    borderRadius: '9px',
+                    background: '#e53e3e',
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  {count > 9 ? '9+' : count}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       <div className={styles.footer}>

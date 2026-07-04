@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Form, Button, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Send, LifeBuoy, Inbox } from 'lucide-react';
-import { createSupportTicket, getSupportTickets } from '../../api/hackathonApi';
+import { createSupportTicket, getSupportTickets, markAllNotificationsRead } from '../../api/hackathonApi';
 
 const CATEGORY_LABELS = {
   technical: 'Technical / Platform Issue',
@@ -50,7 +50,7 @@ const SupportTicket = () => {
     }
   };
 
-  useEffect(() => { loadMine(); }, []);
+  useEffect(() => { loadMine(); markAllNotificationsRead('my_support').catch(() => {}); }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

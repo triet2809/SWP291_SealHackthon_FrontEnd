@@ -5,6 +5,8 @@ import { Users, Shuffle } from 'lucide-react';
 const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
   const [trackCount, setTrackCount] = useState(2);
   const [trackNames, setTrackNames] = useState(['Track A', 'Track B']);
+  // Blank = unlimited teams per track.
+  const [maxTeams, setMaxTeams] = useState('');
   
   const availableTeams = teams;
 
@@ -27,7 +29,8 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
   };
 
   const handleGenerate = () => {
-    onGenerate('All', trackNames, availableTeams);
+    const cap = maxTeams === '' ? null : parseInt(maxTeams, 10);
+    onGenerate('All', trackNames, availableTeams, cap);
     onHide();
   };
 
@@ -44,7 +47,7 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
         </p>
 
         <Row className="g-4">
-          <Col md={12}>
+          <Col md={6}>
             <Form.Group>
               <Form.Label className="fw-medium">1. Number of Tracks</Form.Label>
               <Form.Control 
@@ -54,6 +57,19 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
                 value={trackCount}
                 onChange={handleTrackCountChange}
               />
+            </Form.Group>
+          </Col>
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label className="fw-medium">Max teams / track</Form.Label>
+              <Form.Control 
+                type="number" 
+                min="1"
+                value={maxTeams}
+                onChange={(e) => setMaxTeams(e.target.value)}
+                placeholder="Không giới hạn"
+              />
+              <Form.Text className="text-muted">Để trống = không giới hạn. Áp dụng cho các track tạo mới.</Form.Text>
             </Form.Group>
           </Col>
         </Row>
