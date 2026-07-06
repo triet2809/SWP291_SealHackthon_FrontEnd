@@ -83,7 +83,7 @@ const MyTeam = () => {
       // No longer on a team -> back to the student area to create/join another.
       navigate('/student/dashboard', { replace: true });
     } catch (e) {
-      setError(e.message || 'Rời team thất bại');
+      setError(e.message || 'Failed to leave team');
       setShowLeave(false);
     } finally {
       setLeaving(false);
@@ -134,7 +134,7 @@ const MyTeam = () => {
         <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div className="d-flex align-items-center gap-2">
             <Key size={18} className="text-primary" />
-            <span className="text-muted">Mã mời:</span>
+            <span className="text-muted">Invite code:</span>
             {team.inviteCode ? (
               <>
                 <span className="fw-bold text-primary" style={{ letterSpacing: '2px', fontSize: '1.1rem' }}>{team.inviteCode}</span>
@@ -145,7 +145,7 @@ const MyTeam = () => {
             ) : <span className="text-muted">—</span>}
           </div>
           <Button variant="outline-danger" size="sm" className="d-flex align-items-center gap-1" onClick={() => setShowLeave(true)}>
-            <LogOut size={16} /> Rời team
+            <LogOut size={16} /> Leave team
           </Button>
         </Card.Body>
       </Card>
@@ -196,10 +196,10 @@ const MyTeam = () => {
             <Card.Body className="p-4">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <MessageSquare size={20} className="text-primary" />
-                <h5 className={styles.cardTitle} style={{ marginBottom: 0 }}>Feedback từ Mentor</h5>
+                <h5 className={styles.cardTitle} style={{ marginBottom: 0 }}>Mentor Feedback</h5>
               </div>
               {feedbacks.length === 0 ? (
-                <div className="text-muted small">Chưa có feedback từ mentor.</div>
+                <div className="text-muted small">No mentor feedback yet.</div>
               ) : (
                 <div className="d-flex flex-column gap-3">
                   {feedbacks.map((fb) => (
@@ -263,7 +263,7 @@ const MyTeam = () => {
 
       <Modal show={showLeave} onHide={() => !leaving && setShowLeave(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Rời team?</Modal.Title>
+          <Modal.Title>Leave team?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {(() => {
@@ -271,18 +271,18 @@ const MyTeam = () => {
             const isLeader = me && String(me.role).toLowerCase() === 'leader';
             const count = (team.members || []).length;
             if (isLeader && count > 1) {
-              return <span>Bạn là leader. Khi rời, quyền leader sẽ chuyển cho thành viên vào sớm nhất. Bạn chắc chắn?</span>;
+              return <span>You are the leader. When you leave, leadership passes to the earliest-joined member. Are you sure?</span>;
             }
             if (count <= 1) {
-              return <span>Bạn là thành viên duy nhất. Rời team sẽ <strong>xóa team</strong> này. Bạn chắc chắn?</span>;
+              return <span>You are the only member. Leaving will <strong>delete this team</strong>. Are you sure?</span>;
             }
-            return <span>Bạn chắc chắn muốn rời team này?</span>;
+            return <span>Are you sure you want to leave this team?</span>;
           })()}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowLeave(false)} disabled={leaving}>Hủy</Button>
+          <Button variant="secondary" onClick={() => setShowLeave(false)} disabled={leaving}>Cancel</Button>
           <Button variant="danger" onClick={handleLeave} disabled={leaving} className="d-flex align-items-center gap-2">
-            {leaving ? <Spinner animation="border" size="sm" /> : <LogOut size={16} />} Rời team
+            {leaving ? <Spinner animation="border" size="sm" /> : <LogOut size={16} />} Leave team
           </Button>
         </Modal.Footer>
       </Modal>

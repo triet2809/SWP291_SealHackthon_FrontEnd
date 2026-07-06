@@ -4,17 +4,17 @@ import { LifeBuoy, Inbox } from 'lucide-react';
 import { getSupportTickets, updateSupportTicketStatus, markAllNotificationsRead } from '../../api/hackathonApi';
 
 const CATEGORY_LABELS = {
-  technical: 'Kỹ thuật / Nền tảng',
-  rules: 'Làm rõ luật',
-  team: 'Thay đổi thành viên',
-  other: 'Khác',
+  technical: 'Technical / Platform',
+  rules: 'Rules clarification',
+  team: 'Team member change',
+  other: 'Other',
 };
 
 const STATUS_OPTIONS = [
-  { value: 'open', label: 'Đang mở', variant: 'secondary' },
-  { value: 'in_progress', label: 'Đang xử lý', variant: 'info' },
-  { value: 'resolved', label: 'Đã giải quyết', variant: 'success' },
-  { value: 'closed', label: 'Đã đóng', variant: 'dark' },
+  { value: 'open', label: 'Open', variant: 'secondary' },
+  { value: 'in_progress', label: 'In progress', variant: 'info' },
+  { value: 'resolved', label: 'Resolved', variant: 'success' },
+  { value: 'closed', label: 'Closed', variant: 'dark' },
 ];
 const STATUS_MAP = Object.fromEntries(STATUS_OPTIONS.map((s) => [s.value, s]));
 const PRIORITY_VARIANT = { low: 'light', medium: 'warning', high: 'danger' };
@@ -34,7 +34,7 @@ const SupportTickets = () => {
       const list = Array.isArray(res) ? res : (res?.content || []);
       setTickets(list);
     } catch (err) {
-      setError(err.message || 'Không tải được danh sách ticket');
+      setError(err.message || 'Failed to load tickets');
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ const SupportTickets = () => {
       const updated = await updateSupportTicketStatus(ticket.id, status);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? { ...t, status: updated?.status || status } : t)));
     } catch (err) {
-      setError(err.message || 'Cập nhật trạng thái thất bại');
+      setError(err.message || 'Failed to update status');
     } finally {
       setUpdating((prev) => {
         const next = { ...prev };
@@ -71,11 +71,11 @@ const SupportTickets = () => {
           <h1 className="h3 fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--cf-text-primary)' }}>
             <LifeBuoy size={22} className="text-primary" /> Support Tickets
           </h1>
-          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Yêu cầu hỗ trợ từ thí sinh. Cập nhật trạng thái để theo dõi xử lý.</div>
+          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Support requests from participants. Update the status to track handling.</div>
         </div>
         <div style={{ width: '220px' }}>
           <Form.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">Tất cả trạng thái</option>
+            <option value="">All statuses</option>
             {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </Form.Select>
         </div>
@@ -90,18 +90,18 @@ const SupportTickets = () => {
           ) : filtered.length === 0 ? (
             <div className="text-center py-5 text-muted">
               <Inbox size={48} className="mb-3 opacity-50" />
-              <h5>Không có ticket nào.</h5>
+              <h5>No tickets.</h5>
             </div>
           ) : (
             <div className="table-responsive">
               <Table className="mb-0" hover>
                 <thead>
                   <tr>
-                    <th className="border-top-0">Người gửi</th>
-                    <th className="border-top-0">Chủ đề</th>
-                    <th className="border-top-0">Ưu tiên</th>
-                    <th className="border-top-0">Nội dung</th>
-                    <th className="border-top-0" style={{ minWidth: '160px' }}>Trạng thái</th>
+                    <th className="border-top-0">Sender</th>
+                    <th className="border-top-0">Category</th>
+                    <th className="border-top-0">Priority</th>
+                    <th className="border-top-0">Content</th>
+                    <th className="border-top-0" style={{ minWidth: '160px' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>

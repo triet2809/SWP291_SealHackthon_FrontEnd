@@ -37,7 +37,7 @@ const JoinTeam = () => {
       });
       setRequestState(pending);
     } catch (err) {
-      setBrowseError(err.message || 'Không tải được danh sách team');
+      setBrowseError(err.message || 'Failed to load teams');
     } finally {
       setTeamsLoading(false);
     }
@@ -57,10 +57,10 @@ const JoinTeam = () => {
     setJoining(true);
     try {
       const team = await joinTeamByInviteCode(code);
-      setSuccess(`Đã tham gia ${team?.name || 'team'} thành công! Đang chuyển hướng...`);
+      setSuccess(`Joined ${team?.name || 'team'} successfully! Redirecting...`);
       setTimeout(() => navigate('/team/dashboard'), 1500);
     } catch (err) {
-      setError(err.message || 'Tham gia thất bại. Kiểm tra lại mã mời.');
+      setError(err.message || 'Failed to join. Please check the invite code.');
     } finally {
       setJoining(false);
     }
@@ -77,7 +77,7 @@ const JoinTeam = () => {
         delete next[team.id];
         return next;
       });
-      setBrowseError(err.message || 'Gửi yêu cầu thất bại');
+      setBrowseError(err.message || 'Failed to send request');
     }
   };
 
@@ -93,7 +93,7 @@ const JoinTeam = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Join a Team</h1>
-          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Nhập mã mời từ team leader hoặc gửi yêu cầu tham gia một team công khai.</div>
+          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Enter an invite code from a team leader, or request to join a public team.</div>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ const JoinTeam = () => {
               className={`px-4 py-2 fw-medium ${activeTab === 'code' ? 'bg-primary text-white' : 'bg-transparent text-muted border'}`}
               style={{ borderRadius: 'var(--cf-radius-md)', cursor: 'pointer' }}
             >
-              Có mã mời?
+              Have an invite code?
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
@@ -114,7 +114,7 @@ const JoinTeam = () => {
               className={`px-4 py-2 fw-medium ${activeTab === 'browse' ? 'bg-primary text-white' : 'bg-transparent text-muted border'}`}
               style={{ borderRadius: 'var(--cf-radius-md)', cursor: 'pointer' }}
             >
-              Tìm team công khai
+              Browse public teams
             </Nav.Link>
           </Nav.Item>
         </Nav>
@@ -128,9 +128,9 @@ const JoinTeam = () => {
                 <div className="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-4" style={{ width: '80px', height: '80px' }}>
                   <Key size={40} />
                 </div>
-                <h4 className="fw-bold mb-2" style={{ color: 'var(--cf-text-primary)' }}>Nhập mã mời</h4>
+                <h4 className="fw-bold mb-2" style={{ color: 'var(--cf-text-primary)' }}>Enter invite code</h4>
                 <p className="text-muted mb-4">
-                  Team leader đã tạo team? Hỏi họ mã mời 6 ký tự và nhập vào đây để tham gia ngay.
+                  Already has a team? Ask the leader for the 6-character invite code and enter it here to join instantly.
                 </p>
 
                 <Form onSubmit={handleJoinViaCode} className="mx-auto" style={{ maxWidth: '350px' }}>
@@ -162,7 +162,7 @@ const JoinTeam = () => {
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <h5 className="fw-bold mb-0" style={{ color: 'var(--cf-text-primary)' }}>
-                    Các team đang tìm thành viên
+                    Teams looking for members
                   </h5>
                   <div style={{ width: '300px' }}>
                     <InputGroup>
@@ -170,7 +170,7 @@ const JoinTeam = () => {
                         <Search size={16} className="text-muted" />
                       </InputGroup.Text>
                       <Form.Control
-                        placeholder="Tìm theo tên team..."
+                        placeholder="Search by team name..."
                         className="border-start-0 bg-transparent"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -196,17 +196,17 @@ const JoinTeam = () => {
                               <div className="d-flex justify-content-between align-items-start mb-3">
                                 <Badge bg="light" text="dark" className="border">{team.status || 'active'}</Badge>
                                 <Badge bg={full ? 'danger' : 'success'}>
-                                  {count}/{MAX_TEAM_SIZE} thành viên
+                                  {count}/{MAX_TEAM_SIZE} members
                                 </Badge>
                               </div>
 
                               <h5 className="fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>{team.name}</h5>
-                              <p className="text-muted small mb-4">Mã mời: {team.inviteCode || '—'}</p>
+                              <p className="text-muted small mb-4">Invite code: {team.inviteCode || '—'}</p>
 
                               <div className="mt-auto pt-3" style={{ borderTop: '1px solid var(--cf-border-color)' }}>
                                 {state === 'pending' ? (
                                   <Button variant="outline-secondary" className="w-100 d-flex align-items-center justify-content-center gap-2" disabled>
-                                    <Clock size={18} /> Đã gửi yêu cầu
+                                    <Clock size={18} /> Request sent
                                   </Button>
                                 ) : (
                                   <Button
@@ -216,7 +216,7 @@ const JoinTeam = () => {
                                     onClick={() => handleSendRequest(team)}
                                   >
                                     {state === 'sending' ? <Spinner animation="border" size="sm" /> : <UserPlus size={18} />}
-                                    {full ? 'Team đã đầy' : 'Gửi yêu cầu tham gia'}
+                                    {full ? 'Team is full' : 'Request to join'}
                                   </Button>
                                 )}
                               </div>
@@ -230,7 +230,7 @@ const JoinTeam = () => {
                       <Col xs={12}>
                         <div className="text-center py-5 text-muted">
                           <Users size={48} className="mb-3 opacity-50" />
-                          <h5>{searchQuery ? `Không có team khớp "${searchQuery}"` : 'Chưa có team nào'}</h5>
+                          <h5>{searchQuery ? `No teams match "${searchQuery}"` : 'No teams yet'}</h5>
                         </div>
                       </Col>
                     )}

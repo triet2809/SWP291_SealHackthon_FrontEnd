@@ -103,7 +103,7 @@ const EventDetails = () => {
   // Inline edit of a track's capacity (null = unlimited).
   const handleUpdateTrackCap = async (track, raw) => {
     const val = raw === '' || raw == null ? null : parseInt(raw, 10);
-    if (val != null && (Number.isNaN(val) || val < 1)) { setError('Max teams phải là số dương hoặc để trống.'); return; }
+    if (val != null && (Number.isNaN(val) || val < 1)) { setError('Max teams must be a positive number or left blank.'); return; }
     try {
       setError('');
       await updateTrack(track.id, { name: track.name, description: track.description || '', maxTeams: val });
@@ -291,7 +291,7 @@ const EventDetails = () => {
                 <tr>
                   <th className="border-top-0 border-bottom text-muted py-3">Track</th>
                   <th className="border-top-0 border-bottom text-muted py-3 text-center">Teams</th>
-                  <th className="border-top-0 border-bottom text-muted py-3" style={{ width: '220px' }}>Max teams (trống = ∞)</th>
+                  <th className="border-top-0 border-bottom text-muted py-3" style={{ width: '220px' }}>Max teams (blank = ∞)</th>
                 </tr>
               </thead>
               <tbody>

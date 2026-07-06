@@ -192,7 +192,7 @@ const Sidebar = ({ role }) => {
               <span>{link.name}</span>
               {count > 0 && (
                 <span
-                  title={`${count} mới`}
+                  title={`${count} new`}
                   style={{
                     marginLeft: 'auto',
                     minWidth: '18px',

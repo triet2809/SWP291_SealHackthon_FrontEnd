@@ -18,10 +18,10 @@ const STATUS_VARIANT = {
 };
 
 const STATUS_LABEL = {
-  open: 'Đang mở',
-  in_progress: 'Đang xử lý',
-  resolved: 'Đã giải quyết',
-  closed: 'Đã đóng',
+  open: 'Open',
+  in_progress: 'In progress',
+  resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 const PRIORITY_VARIANT = { low: 'light', medium: 'warning', high: 'danger' };
@@ -60,7 +60,7 @@ const SupportTicket = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.category) { setError('Vui lòng chọn chủ đề.'); return; }
+    if (!form.category) { setError('Please select a category.'); return; }
     setSubmitting(true);
     try {
       await createSupportTicket({
@@ -74,7 +74,7 @@ const SupportTicket = () => {
       setTimeout(() => setJustSubmitted(false), 5000);
       await loadMine();
     } catch (err) {
-      setError(err.message || 'Gửi ticket thất bại');
+      setError(err.message || 'Failed to submit ticket');
     } finally {
       setSubmitting(false);
     }
@@ -84,59 +84,59 @@ const SupportTicket = () => {
     <div className="py-2">
       <div className="mb-4">
         <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Submit a Ticket</h1>
-        <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Liên hệ ban tổ chức để được hỗ trợ. Ticket của bạn sẽ được điều phối viên (coordinator) xử lý.</div>
+        <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Contact the organizers for help. Your ticket will be handled by a coordinator.</div>
       </div>
 
       <Row className="g-4">
         <Col lg={7}>
           <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <Card.Body className="p-4">
-              {justSubmitted && <Alert variant="success">Đã gửi ticket tới ban tổ chức. Bạn có thể theo dõi trạng thái ở danh sách bên phải.</Alert>}
+              {justSubmitted && <Alert variant="success">Your ticket has been sent to the organizers. You can track its status in the list on the right.</Alert>}
               {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
               <Form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <h5 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: 'var(--cf-text-primary)' }}>
                     <LifeBuoy size={20} className="text-primary" />
-                    Chúng tôi có thể giúp gì?
+                    How can we help?
                   </h5>
                 </div>
 
                 <Row className="g-3 mb-4">
                   <Col md={12}>
                     <Form.Group>
-                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Chủ đề *</Form.Label>
+                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Category *</Form.Label>
                       <Form.Select name="category" value={form.category} onChange={handleChange} required>
-                        <option value="">Chọn chủ đề...</option>
-                        <option value="technical">Kỹ thuật / Nền tảng</option>
-                        <option value="rules">Làm rõ luật</option>
-                        <option value="team">Thay đổi thành viên team</option>
-                        <option value="other">Câu hỏi khác</option>
+                        <option value="">Select a category...</option>
+                        <option value="technical">Technical / Platform</option>
+                        <option value="rules">Rules clarification</option>
+                        <option value="team">Team member change</option>
+                        <option value="other">Other question</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
 
                   <Col md={12}>
                     <Form.Group>
-                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Mức độ ưu tiên</Form.Label>
+                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Priority</Form.Label>
                       <Form.Select name="priority" value={form.priority} onChange={handleChange} required>
-                        <option value="low">Thấp - Câu hỏi chung</option>
-                        <option value="medium">Trung bình - Cản trở tiến độ</option>
-                        <option value="high">Cao - Sự cố nghiêm trọng (khẩn)</option>
+                        <option value="low">Low - General question</option>
+                        <option value="medium">Medium - Blocking progress</option>
+                        <option value="high">High - Critical issue (urgent)</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
 
                   <Col md={12}>
                     <Form.Group>
-                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Tiêu đề *</Form.Label>
-                      <Form.Control type="text" name="subject" value={form.subject} onChange={handleChange} placeholder="Tóm tắt ngắn gọn vấn đề..." required />
+                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Subject *</Form.Label>
+                      <Form.Control type="text" name="subject" value={form.subject} onChange={handleChange} placeholder="Briefly summarize the issue..." required />
                     </Form.Group>
                   </Col>
 
                   <Col md={12}>
                     <Form.Group>
-                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Mô tả chi tiết *</Form.Label>
-                      <Form.Control as="textarea" name="description" rows={6} value={form.description} onChange={handleChange} placeholder="Cung cấp chi tiết, link, hoặc bối cảnh liên quan..." required />
+                      <Form.Label className="fw-medium" style={{ color: 'var(--cf-text-primary)', fontSize: '0.875rem' }}>Detailed description *</Form.Label>
+                      <Form.Control as="textarea" name="description" rows={6} value={form.description} onChange={handleChange} placeholder="Provide details, links, or relevant context..." required />
                     </Form.Group>
                   </Col>
                 </Row>
@@ -144,7 +144,7 @@ const SupportTicket = () => {
                 <div className="d-flex justify-content-end pt-3" style={{ borderTop: '1px solid var(--cf-border-color)' }}>
                   <Button variant="primary" type="submit" className="d-flex align-items-center gap-2 px-4" disabled={submitting}>
                     {submitting ? <Spinner animation="border" size="sm" /> : <Send size={18} />}
-                    {submitting ? 'Đang gửi...' : 'Gửi Ticket'}
+                    {submitting ? 'Submitting...' : 'Submit Ticket'}
                   </Button>
                 </div>
               </Form>
@@ -155,13 +155,13 @@ const SupportTicket = () => {
         <Col lg={5}>
           <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <Card.Body className="p-4">
-              <h5 className="fw-bold mb-3" style={{ color: 'var(--cf-text-primary)' }}>Ticket của tôi</h5>
+              <h5 className="fw-bold mb-3" style={{ color: 'var(--cf-text-primary)' }}>My Tickets</h5>
               {ticketsLoading ? (
                 <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
               ) : tickets.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   <Inbox size={40} className="mb-2 opacity-50" />
-                  <div>Chưa có ticket nào.</div>
+                  <div>No tickets yet.</div>
                 </div>
               ) : (
                 <div className="d-flex flex-column gap-3">

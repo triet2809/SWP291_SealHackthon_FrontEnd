@@ -11,7 +11,7 @@ const MAX_EMAIL_SLOTS = MAX_MEMBERS - 1; // 4 email slots
 const trackIsFull = (t) => t.maxTeams != null && (t.teamCount ?? 0) >= t.maxTeams;
 const trackLabel = (t) => {
   const cap = t.maxTeams != null ? `${t.teamCount ?? 0}/${t.maxTeams}` : `${t.teamCount ?? 0}/∞`;
-  return `${t.name} (${cap}${trackIsFull(t) ? ' – đầy' : ''})`;
+  return `${t.name} (${cap}${trackIsFull(t) ? ' – full' : ''})`;
 };
 
 const CreateTeam = () => {
@@ -116,18 +116,18 @@ const CreateTeam = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!teamData.name.trim()) { setError('Vui lòng nhập tên team.'); return; }
-    if (!teamData.eventId) { setError('Vui lòng chọn sự kiện đang mở đăng ký.'); return; }
-    if (!teamData.trackId) { setError('Vui lòng chọn track.'); return; }
+    if (!teamData.name.trim()) { setError('Please enter a team name.'); return; }
+    if (!teamData.eventId) { setError('Please select an event that is open for registration.'); return; }
+    if (!teamData.trackId) { setError('Please select a track.'); return; }
     const chosenTrack = tracks.find((t) => t.id === teamData.trackId);
-    if (chosenTrack && trackIsFull(chosenTrack)) { setError('Track này đã đầy, vui lòng chọn track khác.'); return; }
+    if (chosenTrack && trackIsFull(chosenTrack)) { setError('This track is full, please choose another track.'); return; }
     // Bắt buộc chấp thuận thể lệ (chỉ khi sự kiện có công bố thể lệ PUBLIC).
     if (rules.length > 0 && !acceptedRules) { setError('Please read and agree to the event rules before creating a team.'); return; }
 
     const emails = memberEmails.map((s) => s.trim()).filter(Boolean);
     // Basic email format check for filled slots.
     const bad = emails.find((em) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em));
-    if (bad) { setError(`Email không hợp lệ: ${bad}`); return; }
+    if (bad) { setError(`Invalid email: ${bad}`); return; }
 
     setSubmitting(true);
     try {
@@ -146,7 +146,7 @@ const CreateTeam = () => {
       setCreatedTeam(created);
       setSuccess(true);
     } catch (err) {
-      setError(err.message || 'Tạo team thất bại');
+      setError(err.message || 'Failed to create team');
     } finally {
       setSubmitting(false);
     }
@@ -171,7 +171,7 @@ const CreateTeam = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Create a Team</h1>
-          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Tạo team mới. Bạn là leader; có thể thêm thành viên ngay hoặc mời sau bằng mã.</div>
+          <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Create a new team. You are the leader; add members now or invite them later with the code.</div>
         </div>
       </div>
 
@@ -181,14 +181,14 @@ const CreateTeam = () => {
             <div className="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle mb-4" style={{ width: '80px', height: '80px' }}>
               <Save size={40} />
             </div>
-            <h3 className="fw-bold mb-3" style={{ color: 'var(--cf-text-primary)' }}>Tạo team thành công!</h3>
+            <h3 className="fw-bold mb-3" style={{ color: 'var(--cf-text-primary)' }}>Team created successfully!</h3>
             <p className="mb-4 text-muted mx-auto" style={{ maxWidth: '500px' }}>
-              Team <strong>{createdTeam?.name || teamData.name}</strong> đã được tạo. Bạn là Team Leader.
+              Team <strong>{createdTeam?.name || teamData.name}</strong> has been created. You are the Team Leader.
             </p>
 
             {createdTeam?.inviteCode && (
               <div className="p-4 rounded mb-4 mx-auto" style={{ maxWidth: '420px', backgroundColor: 'var(--cf-bg-main)', border: '1px solid var(--cf-border-color)' }}>
-                <div className="text-muted mb-2 text-uppercase fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>Mã mời (Invite Code)</div>
+                <div className="text-muted mb-2 text-uppercase fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>Invite Code</div>
                 <div className="d-flex align-items-center justify-content-center gap-2">
                   <Key size={20} className="text-primary" />
                   <span className="fw-bold text-primary" style={{ letterSpacing: '3px', fontSize: '1.5rem' }}>{createdTeam.inviteCode}</span>
@@ -200,12 +200,12 @@ const CreateTeam = () => {
             )}
 
             <p className="text-muted mb-4 small">
-              Chia sẻ mã này cho bạn bè để họ nhập ở trang Join Team.
-              <br />Team cần từ 3 đến 5 thành viên trước khi sự kiện bắt đầu.
+              Share this code with friends so they can enter it on the Join Team page.
+              <br />A team needs 3 to 5 members before the event starts.
             </p>
 
             <Button variant="primary" className="px-4 py-2" onClick={() => navigate('/team/dashboard')}>
-              Vào Team Dashboard
+              Go to Team Dashboard
             </Button>
           </Card.Body>
         </Card>
@@ -221,20 +221,20 @@ const CreateTeam = () => {
                   </h5>
 
                   <Form.Group className="mb-3">
-                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Tên team *</Form.Label>
-                    <Form.Control type="text" name="name" value={teamData.name} onChange={handleTeamChange} required placeholder="Nhập tên team" />
+                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Team name *</Form.Label>
+                    <Form.Control type="text" name="name" value={teamData.name} onChange={handleTeamChange} required placeholder="Enter team name" />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Sự kiện *</Form.Label>
+                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Event *</Form.Label>
                     <Form.Select name="eventId" value={teamData.eventId} onChange={handleTeamChange} disabled={eventsLoading} required>
-                      <option value="">{eventsLoading ? 'Đang tải sự kiện...' : 'Chọn sự kiện đang mở đăng ký...'}</option>
+                      <option value="">{eventsLoading ? 'Loading events...' : 'Select an event open for registration...'}</option>
                       {events.map((ev) => (
                         <option key={ev.id} value={ev.id}>{ev.title}{ev.term ? ` · ${ev.term}` : ''}</option>
                       ))}
                     </Form.Select>
                     {!eventsLoading && events.length === 0 && (
-                      <Form.Text className="text-danger">Hiện không có sự kiện nào đang mở đăng ký.</Form.Text>
+                      <Form.Text className="text-danger">There are no events open for registration right now.</Form.Text>
                     )}
                   </Form.Group>
 
@@ -242,7 +242,7 @@ const CreateTeam = () => {
                     <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Track *</Form.Label>
                     <Form.Select name="trackId" value={teamData.trackId} onChange={handleTeamChange} disabled={!teamData.eventId || tracksLoading} required>
                       <option value="">
-                        {!teamData.eventId ? 'Chọn sự kiện trước' : (tracksLoading ? 'Đang tải track...' : (tracks.length === 0 ? 'Sự kiện chưa có track' : 'Chọn track...'))}
+                        {!teamData.eventId ? 'Select an event first' : (tracksLoading ? 'Loading tracks...' : (tracks.length === 0 ? 'This event has no tracks' : 'Select a track...'))}
                       </option>
                       {tracks.map((t) => (
                         <option key={t.id} value={t.id} disabled={trackIsFull(t)}>{trackLabel(t)}</option>
@@ -258,18 +258,18 @@ const CreateTeam = () => {
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <h5 className="fw-bold mb-0" style={{ color: 'var(--cf-text-primary)' }}>
-                      Thành viên ({totalMembers}/{MAX_MEMBERS})
+                      Members ({totalMembers}/{MAX_MEMBERS})
                     </h5>
                     {memberEmails.length < MAX_EMAIL_SLOTS && (
                       <Button variant="outline-primary" size="sm" className="d-flex align-items-center gap-1" onClick={addEmailSlot}>
-                        <Plus size={16} /> Thêm thành viên
+                        <Plus size={16} /> Add member
                       </Button>
                     )}
                   </div>
 
                   <Alert variant="warning" className="py-2 mb-4 d-flex align-items-center gap-2" style={{ fontSize: '0.875rem' }}>
                     <AlertTriangle size={16} />
-                    <span><strong>Lưu ý:</strong> Nhập email thành viên đã đăng ký tài khoản (và đã được duyệt). Để trống cũng được — mời sau bằng mã. Team tối đa 5 người.</span>
+                    <span><strong>Note:</strong> Enter the emails of members who have registered (and been approved). You can leave these blank and invite later with the code. A team can have up to 5 members.</span>
                   </Alert>
 
                   <div className="d-flex flex-column gap-3">
@@ -277,7 +277,7 @@ const CreateTeam = () => {
                     <div className="p-3 rounded" style={{ border: '1px solid var(--cf-status-info)', backgroundColor: 'var(--cf-bg-main)' }}>
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="fw-bold" style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>
-                          Thành viên 1 <Badge bg="info" className="ms-2">Team Leader (Bạn)</Badge>
+                          Member 1 <Badge bg="info" className="ms-2">Team Leader (You)</Badge>
                         </span>
                         <span className="text-muted small">{currentUser.email || currentUser.fullName || 'You'}</span>
                       </div>
@@ -288,14 +288,14 @@ const CreateTeam = () => {
                       <div key={idx} className="p-3 rounded position-relative" style={{ border: '1px solid var(--cf-border-color)', backgroundColor: 'var(--cf-bg-main)' }}>
                         <div className="d-flex justify-content-between align-items-center mb-3">
                           <span className="fw-bold" style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>
-                            Thành viên {idx + 2}
+                            Member {idx + 2}
                           </span>
-                          <Button variant="link" className="text-danger p-0" onClick={() => removeEmailSlot(idx)} title="Bỏ ô này">
+                          <Button variant="link" className="text-danger p-0" onClick={() => removeEmailSlot(idx)} title="Remove this slot">
                             <Trash2 size={16} />
                           </Button>
                         </div>
                         <Form.Group>
-                          <Form.Label style={{ fontSize: '0.875rem', color: 'var(--cf-text-secondary)' }}>Email thành viên</Form.Label>
+                          <Form.Label style={{ fontSize: '0.875rem', color: 'var(--cf-text-secondary)' }}>Member email</Form.Label>
                           <Form.Control
                             type="email"
                             placeholder="teammate@example.com"
@@ -332,7 +332,7 @@ const CreateTeam = () => {
                   <div className="d-flex justify-content-end mt-4 pt-3" style={{ borderTop: '1px solid var(--cf-border-color)' }}>
                     <Button variant="primary" type="submit" className="px-4 py-2 d-flex align-items-center gap-2" disabled={submitting || (rules.length > 0 && !acceptedRules)}>
                       {submitting ? <Spinner animation="border" size="sm" /> : <Save size={18} />}
-                      {submitting ? 'Đang tạo...' : 'Tạo team'}
+                      {submitting ? 'Creating...' : 'Create team'}
                     </Button>
                   </div>
                 </Card.Body>

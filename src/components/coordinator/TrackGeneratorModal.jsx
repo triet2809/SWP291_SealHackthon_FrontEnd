@@ -67,9 +67,9 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
                 min="1"
                 value={maxTeams}
                 onChange={(e) => setMaxTeams(e.target.value)}
-                placeholder="Không giới hạn"
+                placeholder="Unlimited"
               />
-              <Form.Text className="text-muted">Để trống = không giới hạn. Áp dụng cho các track tạo mới.</Form.Text>
+              <Form.Text className="text-muted">Leave blank = unlimited. Applies to newly created tracks.</Form.Text>
             </Form.Group>
           </Col>
         </Row>

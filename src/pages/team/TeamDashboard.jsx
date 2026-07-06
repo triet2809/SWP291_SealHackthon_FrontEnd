@@ -103,13 +103,13 @@ const TeamDashboard = () => {
           <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div className="d-flex align-items-center gap-2">
               <Key size={18} className="text-primary" />
-              <span className="text-muted">Mã mời team:</span>
+              <span className="text-muted">Team invite code:</span>
               <span className="fw-bold text-primary" style={{ letterSpacing: '2px', fontSize: '1.1rem' }}>{team.inviteCode}</span>
               <button type="button" className="btn btn-link p-0 ms-1 text-secondary" onClick={copyCode} title="Copy">
                 {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
               </button>
             </div>
-            <span className="text-muted small">Chia sẻ mã này để bạn bè tham gia team.</span>
+            <span className="text-muted small">Share this code so friends can join your team.</span>
           </Card.Body>
         </Card>
       )}

@@ -42,11 +42,11 @@ const Register = () => {
     e.preventDefault();
     setError('');
     if (password.length < 8) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự');
+      setError('Password must be at least 8 characters');
       return;
     }
     if (password !== confirm) {
-      setError('Mật khẩu nhập lại không khớp');
+      setError('Passwords do not match');
       return;
     }
     setSubmitting(true);
@@ -61,13 +61,13 @@ const Register = () => {
         if (fieldErrors && typeof fieldErrors === 'object') {
           setError(Object.values(fieldErrors).join('. '));
         } else {
-          setError(res.data?.message || 'Đăng ký thất bại');
+          setError(res.data?.message || 'Registration failed');
         }
         return;
       }
       navigate('/pending-approval');
     } catch {
-      setError('Không kết nối được tới server');
+      setError('Could not connect to the server');
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +167,7 @@ const Register = () => {
                   <Form.Group className="mb-3">
                     <Form.Label>Password</Form.Label>
                     <Form.Control type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-                    <Form.Text className="text-muted">Tối thiểu 8 ký tự</Form.Text>
+                    <Form.Text className="text-muted">At least 8 characters</Form.Text>
                   </Form.Group>
                 </Col>
                 <Col md={6}>

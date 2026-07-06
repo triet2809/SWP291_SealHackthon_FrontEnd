@@ -37,7 +37,7 @@ const JoinRequests = () => {
           if (leader) await loadRequests(t.id);
         }
       } catch (e) {
-        if (active) setError(e.message || 'Không tải được yêu cầu tham gia');
+        if (active) setError(e.message || 'Failed to load join requests');
       } finally {
         if (active) setLoading(false);
       }
@@ -58,7 +58,7 @@ const JoinRequests = () => {
       setTeam(list[0] || team);
       await loadRequests(team.id);
     } catch (e) {
-      setError(e.message || 'Thao tác thất bại');
+      setError(e.message || 'Action failed');
     } finally {
       setActing((prev) => {
         const next = { ...prev };
@@ -76,9 +76,9 @@ const JoinRequests = () => {
     <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Yêu cầu tham gia</h1>
+          <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Join Requests</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>
-            {team ? `Team ${team.name} · ${(team.members || []).length}/5 thành viên` : 'Bạn chưa có team.'}
+            {team ? `Team ${team.name} · ${(team.members || []).length}/5 members` : 'You are not in a team yet.'}
           </div>
         </div>
       </div>
@@ -89,13 +89,13 @@ const JoinRequests = () => {
         <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)' }}>
           <Card.Body className="p-5 text-center text-muted">
             <Users size={48} className="mb-3 opacity-50" />
-            <h5>Bạn chưa thuộc team nào.</h5>
+            <h5>You are not part of any team.</h5>
           </Card.Body>
         </Card>
       )}
 
       {team && !isLeader && (
-        <Alert variant="info">Chỉ team leader mới duyệt được yêu cầu tham gia.</Alert>
+        <Alert variant="info">Only the team leader can approve join requests.</Alert>
       )}
 
       {team && isLeader && (
@@ -104,17 +104,17 @@ const JoinRequests = () => {
             {requests.length === 0 ? (
               <div className="p-5 text-center text-muted">
                 <Inbox size={48} className="mb-3 opacity-50" />
-                <h5>Chưa có yêu cầu nào đang chờ.</h5>
+                <h5>No pending requests.</h5>
               </div>
             ) : (
               <div className="table-responsive">
                 <Table className="mb-0" hover>
                   <thead>
                     <tr>
-                      <th className="border-top-0">Người gửi</th>
+                      <th className="border-top-0">Sender</th>
                       <th className="border-top-0">Email</th>
-                      <th className="border-top-0">Lời nhắn</th>
-                      <th className="border-top-0 text-end">Hành động</th>
+                      <th className="border-top-0">Message</th>
+                      <th className="border-top-0 text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -124,7 +124,7 @@ const JoinRequests = () => {
                         <tr key={req.id}>
                           <td className="align-middle fw-medium">{req.userFullName || '—'}</td>
                           <td className="align-middle text-muted">{req.userEmail}</td>
-                          <td className="align-middle text-muted">{req.message || <span className="fst-italic opacity-50">(không có)</span>}</td>
+                          <td className="align-middle text-muted">{req.message || <span className="fst-italic opacity-50">(none)</span>}</td>
                           <td className="align-middle text-end">
                             <div className="d-inline-flex gap-2">
                               <Button
@@ -134,7 +134,7 @@ const JoinRequests = () => {
                                 disabled={!!busy}
                                 onClick={() => handleAct(req, 'accept')}
                               >
-                                {busy === 'accept' ? <Spinner animation="border" size="sm" /> : <Check size={16} />} Duyệt
+                                {busy === 'accept' ? <Spinner animation="border" size="sm" /> : <Check size={16} />} Approve
                               </Button>
                               <Button
                                 size="sm"
@@ -143,7 +143,7 @@ const JoinRequests = () => {
                                 disabled={!!busy}
                                 onClick={() => handleAct(req, 'reject')}
                               >
-                                {busy === 'reject' ? <Spinner animation="border" size="sm" /> : <X size={16} />} Từ chối
+                                {busy === 'reject' ? <Spinner animation="border" size="sm" /> : <X size={16} />} Reject
                               </Button>
                             </div>
                           </td>

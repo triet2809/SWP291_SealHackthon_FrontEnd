@@ -58,12 +58,12 @@ const Login = () => {
     try {
       const result = await login({ email, password });
       if (!result.ok) {
-        setError(result.data?.message || 'Email hoặc mật khẩu không đúng');
+        setError(result.data?.message || 'Incorrect email or password');
         return;
       }
       const auth = result.data?.data || result.data;
       if (!auth?.accessToken) {
-        setError('Phản hồi đăng nhập thiếu access token');
+        setError('Login response is missing the access token');
         return;
       }
       localStorage.setItem('seal_access_token', auth.accessToken);
@@ -74,7 +74,7 @@ const Login = () => {
       const dest = staticRoute || await resolveParticipantRoute();
       navigate(dest, { replace: true });
     } catch {
-      setError('Không kết nối được tới server');
+      setError('Could not connect to the server');
     } finally {
       setSubmitting(false);
     }

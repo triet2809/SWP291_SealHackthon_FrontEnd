@@ -94,7 +94,7 @@ const SubmissionManagement = () => {
         const created = await upsertSubmission({ roundId: round.id, teamId: team.id, ...payload });
         setSubmission(created);
       }
-      setSaved(status === 'submitted' ? 'Đã nộp bài.' : 'Đã lưu nháp.');
+      setSaved(status === 'submitted' ? 'Submission sent.' : 'Draft saved.');
     } catch (e) {
       setError(e.message || 'Failed to save submission');
     } finally {
