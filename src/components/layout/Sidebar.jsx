@@ -21,7 +21,8 @@ import {
   Clock,
   AlertTriangle,
   BarChart2,
-  LifeBuoy
+  LifeBuoy,
+  Route as RouteIcon
 } from 'lucide-react';
 import { users } from '../../data/mockData';
 import styles from './Sidebar.module.css';
@@ -67,6 +68,7 @@ const Sidebar = ({ role }) => {
           { name: 'Team Chat', path: '/team/chat', icon: MessageSquare },
           { name: 'Submission Manage...', path: '/team/submissions', icon: Upload },
           { name: 'Submission History', path: '/team/history', icon: History },
+          { name: 'Team Journey', path: '/team/journey', icon: RouteIcon },
           { name: 'Notice Board', path: '/team/notices', icon: Bell },
           { name: 'Deadlines & Schedule', path: '/team/schedule', icon: Calendar },
           { name: 'Support Ticket', path: '/team/support', icon: MessageSquare },
@@ -107,6 +109,8 @@ const Sidebar = ({ role }) => {
           { name: 'Criteria', path: '/coordinator/criteria', icon: FileCheck },
           { name: 'Scoring Analytics', path: '/coordinator/scoring', icon: BarChart2 },
           { name: 'Rankings', path: '/coordinator/ranking', icon: Award },
+          { name: 'Appeals', path: '/coordinator/appeals', icon: AlertTriangle },
+          { name: 'Team Timeline', path: '/coordinator/timeline', icon: RouteIcon },
           { name: 'Awards', path: '/coordinator/awards', icon: Award },
           { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
           { name: 'Reports', path: '/coordinator/reports', icon: FileText },

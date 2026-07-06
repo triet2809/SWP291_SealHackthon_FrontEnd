@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Trash2, Users, Save, AlertTriangle, Key, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents, getTracks, createTeam } from '../../api/hackathonApi';
+import { getEvents, getTracks, createTeam, getEventRules, acceptEventRules } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 
 const MAX_MEMBERS = 5; // leader + up to 4 teammates
@@ -27,6 +27,11 @@ const CreateTeam = () => {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [tracks, setTracks] = useState([]);
   const [tracksLoading, setTracksLoading] = useState(false);
+
+  // Thể lệ PUBLIC của sự kiện + trạng thái checkbox chấp thuận.
+  // Thí sinh phải tích "I agree" trước khi tạo team; BE cũng ghi nhận việc chấp thuận.
+  const [rules, setRules] = useState([]);
+  const [acceptedRules, setAcceptedRules] = useState(false);
 
   const currentUser = getStoredUser() || {};
 
@@ -53,7 +58,7 @@ const CreateTeam = () => {
 
   // When an event is picked, load its tracks (with capacity info).
   useEffect(() => {
-    if (!teamData.eventId) { setTracks([]); return; }
+    if (!teamData.eventId) { setTracks([]); setRules([]); setAcceptedRules(false); return; }
     let active = true;
     setTracksLoading(true);
     (async () => {
@@ -66,6 +71,22 @@ const CreateTeam = () => {
         if (active) setError(e.message || 'Failed to load tracks');
       } finally {
         if (active) setTracksLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [teamData.eventId]);
+
+  // Tải thể lệ PUBLIC của sự kiện đang chọn; reset checkbox mỗi khi đổi sự kiện.
+  useEffect(() => {
+    if (!teamData.eventId) return;
+    let active = true;
+    setAcceptedRules(false);
+    (async () => {
+      try {
+        const list = await getEventRules(teamData.eventId);
+        if (active) setRules(Array.isArray(list) ? list : list?.content || []);
+      } catch {
+        if (active) setRules([]); // Không có thể lệ / lỗi nhẹ không chặn tạo team
       }
     })();
     return () => { active = false; };
@@ -100,6 +121,8 @@ const CreateTeam = () => {
     if (!teamData.trackId) { setError('Vui lòng chọn track.'); return; }
     const chosenTrack = tracks.find((t) => t.id === teamData.trackId);
     if (chosenTrack && trackIsFull(chosenTrack)) { setError('Track này đã đầy, vui lòng chọn track khác.'); return; }
+    // Bắt buộc chấp thuận thể lệ (chỉ khi sự kiện có công bố thể lệ PUBLIC).
+    if (rules.length > 0 && !acceptedRules) { setError('Vui lòng đọc và đồng ý với thể lệ sự kiện trước khi tạo team.'); return; }
 
     const emails = memberEmails.map((s) => s.trim()).filter(Boolean);
     // Basic email format check for filled slots.
@@ -108,6 +131,12 @@ const CreateTeam = () => {
 
     setSubmitting(true);
     try {
+      // Ghi nhận việc chấp thuận thể lệ trước khi tạo team (idempotent ở BE).
+      if (rules.length > 0 && acceptedRules) {
+        try {
+          await acceptEventRules({ eventId: teamData.eventId, accepted: true });
+        } catch { /* việc ghi nhận không nên chặn tạo team nếu BE tạm lỗi */ }
+      }
       const created = await createTeam({
         trackId: teamData.trackId,
         name: teamData.name.trim(),
@@ -278,8 +307,30 @@ const CreateTeam = () => {
                     ))}
                   </div>
 
+                  {/* Thể lệ sự kiện (chỉ hiện khi sự kiện có rule PUBLIC) + checkbox đồng ý */}
+                  {rules.length > 0 && (
+                    <div className="mt-4 p-3 rounded" style={{ border: '1px solid var(--cf-border-color)', backgroundColor: 'var(--cf-bg-main)' }}>
+                      <h6 className="fw-bold mb-2" style={{ color: 'var(--cf-text-primary)' }}>Event Rules</h6>
+                      <div className="mb-3" style={{ maxHeight: '160px', overflowY: 'auto' }}>
+                        {rules.map((r) => (
+                          <div key={r.id} className="mb-2">
+                            <div className="fw-medium small">{r.title}</div>
+                            <div className="text-muted small" style={{ whiteSpace: 'pre-wrap' }}>{r.content}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <Form.Check
+                        type="checkbox"
+                        id="accept-event-rules"
+                        checked={acceptedRules}
+                        onChange={(e) => setAcceptedRules(e.target.checked)}
+                        label="I have read and agree to the event rules"
+                      />
+                    </div>
+                  )}
+
                   <div className="d-flex justify-content-end mt-4 pt-3" style={{ borderTop: '1px solid var(--cf-border-color)' }}>
-                    <Button variant="primary" type="submit" className="px-4 py-2 d-flex align-items-center gap-2" disabled={submitting}>
+                    <Button variant="primary" type="submit" className="px-4 py-2 d-flex align-items-center gap-2" disabled={submitting || (rules.length > 0 && !acceptedRules)}>
                       {submitting ? <Spinner animation="border" size="sm" /> : <Save size={18} />}
                       {submitting ? 'Đang tạo...' : 'Tạo team'}
                     </Button>

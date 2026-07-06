@@ -573,3 +573,179 @@ export async function updateSupportTicketStatus(id, status) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to update ticket status');
   return res.data;
 }
+
+// ============================================================================
+// Team Journey Timeline (dòng thời gian hành trình của đội)
+// ----------------------------------------------------------------------------
+// BE trả về danh sách các mốc: tạo đội, thăng hạng, bị loại, khiếu nại, giải thưởng.
+// ============================================================================
+
+// Lấy timeline của (các) đội mà user hiện tại đang tham gia. eventId là tùy chọn để lọc theo sự kiện.
+export async function getMyTeamTimeline(eventId) {
+  const qs = eventId ? `?eventId=${encodeURIComponent(eventId)}` : '';
+  const res = await apiGet(`/team-timeline/my-team${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load team timeline');
+  return res.data;
+}
+
+// Lấy timeline của một đội cụ thể (EC xem mọi đội; thí sinh chỉ xem đội mình).
+export async function getTeamTimeline(teamId) {
+  const res = await apiGet(`/team-timeline/teams/${teamId}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load team timeline');
+  return res.data;
+}
+
+// EC xem toàn bộ mốc của mọi đội trong một sự kiện (có phân trang).
+export async function getEventTimeline(eventId, params = {}) {
+  const qs = new URLSearchParams({ eventId, ...params }).toString();
+  const res = await apiGet(`/team-timeline?${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load event timeline');
+  return res.data;
+}
+
+// ============================================================================
+// Appeals — khiếu nại kết quả với cửa sổ 15 phút
+// ----------------------------------------------------------------------------
+// EC công bố kết quả -> mở cửa sổ 15 phút; thí sinh nộp khiếu nại trong cửa sổ đó.
+// Backend luôn kiểm tra deadline, FE chỉ hiển thị countdown cho tiện.
+// ============================================================================
+
+// EC công bố kết quả vòng thi và mở cửa sổ khiếu nại 15 phút.
+export async function publishRoundResults(roundId) {
+  const res = await apiPost(`/appeals/rounds/${roundId}/publish-results`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to publish round results');
+  return res.data;
+}
+
+// Thí sinh (leader/member) nộp khiếu nại. Đội được suy ra từ tư cách thành viên ở BE.
+export async function createAppeal(payload) {
+  const res = await apiPost('/appeals', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to submit appeal');
+  return res.data;
+}
+
+// EC duyệt danh sách khiếu nại theo sự kiện / vòng / trạng thái (có phân trang).
+export async function getAppeals(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/appeals${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load appeals');
+  return res.data;
+}
+
+// Xem lại các khiếu nại của một đội (EC xem mọi đội; thành viên xem đội mình).
+export async function getTeamAppeals(teamId) {
+  const res = await apiGet(`/appeals/teams/${teamId}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load team appeals');
+  return res.data;
+}
+
+// Chi tiết một đơn khiếu nại (EC).
+export async function getAppeal(id) {
+  const res = await apiGet(`/appeals/${id}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load appeal');
+  return res.data;
+}
+
+// EC ghi phản hồi trung gian; đơn vẫn ở trạng thái PENDING.
+export async function respondToAppeal(id, response) {
+  const res = await apiPost(`/appeals/${id}/respond`, { response });
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to respond to appeal');
+  return res.data;
+}
+
+// EC chốt kết luận: status = 'ACCEPTED' hoặc 'REJECTED'.
+export async function resolveAppeal(id, payload) {
+  const res = await apiPost(`/appeals/${id}/resolve`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to resolve appeal');
+  return res.data;
+}
+
+// ============================================================================
+// Event Rules & Rule Acceptances — thể lệ sự kiện + xác nhận chấp thuận
+// ----------------------------------------------------------------------------
+// Thí sinh chỉ thấy rule PUBLIC. Checkbox "I agree" gọi acceptEventRules.
+// ============================================================================
+
+// Danh sách thể lệ của một sự kiện (thí sinh chỉ nhận rule PUBLIC).
+export async function getEventRules(eventId) {
+  const res = await apiGet(`/event-rules?eventId=${encodeURIComponent(eventId)}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load event rules');
+  return res.data;
+}
+
+// EC tạo một điều luật mới.
+export async function createEventRule(payload) {
+  const res = await apiPost('/event-rules', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to create rule');
+  return res.data;
+}
+
+// EC cập nhật một điều luật.
+export async function updateEventRule(id, payload) {
+  const res = await apiPatch(`/event-rules/${id}`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to update rule');
+  return res.data;
+}
+
+// EC xóa một điều luật.
+export async function deleteEventRule(id) {
+  const res = await apiDelete(`/event-rules/${id}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to delete rule');
+}
+
+// User chấp nhận thể lệ của một sự kiện (idempotent). payload = { eventId, accepted: true }.
+export async function acceptEventRules(payload) {
+  const res = await apiPost('/event-rules/acceptances', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to accept rules');
+  return res.data;
+}
+
+// Kiểm tra user hiện tại đã chấp nhận thể lệ chưa (để ẩn/hiện checkbox).
+export async function getMyRuleAcceptance(eventId) {
+  const res = await apiGet(`/event-rules/acceptances/me?eventId=${encodeURIComponent(eventId)}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to check rule acceptance');
+  return res.data;
+}
+
+// ============================================================================
+// Prize Revisions — lịch sử thu hồi / chuyển giải thưởng (không xóa cứng)
+// ============================================================================
+
+// EC thu hồi giải thưởng khỏi đội hiện tại. payload = { reason, evidenceNote? }.
+export async function revokePrize(id, payload) {
+  const res = await apiPost(`/prizes/${id}/revoke`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to revoke prize');
+  return res.data;
+}
+
+// EC chuyển giải thưởng sang đội khác. payload = { newTeamId, reason, evidenceNote? }.
+export async function reassignPrize(id, payload) {
+  const res = await apiPost(`/prizes/${id}/reassign`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to reassign prize');
+  return res.data;
+}
+
+// Lịch sử chỉnh sửa của một giải thưởng.
+export async function getPrizeRevisions(id) {
+  const res = await apiGet(`/prizes/${id}/revisions`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load prize revisions');
+  return res.data;
+}
+
+// ============================================================================
+// Tie-break Decisions — quyết định phân định hòa thủ công (review GitHub)
+// ============================================================================
+
+// EC ghi nhận một quyết định phân định hòa thủ công cho một đội trong vòng.
+export async function createTieBreakDecision(roundId, payload) {
+  const res = await apiPost(`/round-rankings/rounds/${roundId}/tie-break-decisions`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to create tie-break decision');
+  return res.data;
+}
+
+// Danh sách quyết định phân định hòa thủ công của một vòng.
+export async function getTieBreakDecisions(roundId) {
+  const res = await apiGet(`/round-rankings/rounds/${roundId}/tie-break-decisions`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load tie-break decisions');
+  return res.data;
+}

@@ -10,11 +10,15 @@ import {
   createIncident,
 } from '../../api/hackathonApi';
 
+// Các value phải khớp CHÍNH XÁC với enum IncidentType ở backend
+// (cheating, plagiarism, invalid_submission, rule_violation, technical_issue, other).
+// Trước đây FE gửi 'conduct'/'rules'/'content' nên backend từ chối vì không thuộc enum.
 const INCIDENT_TYPES = [
   { value: 'plagiarism', label: 'Code Plagiarism' },
-  { value: 'conduct', label: 'Unprofessional Conduct' },
-  { value: 'rules', label: 'Rules Violation (Team Size, Late Submission, etc.)' },
-  { value: 'content', label: 'Inappropriate Content' },
+  { value: 'cheating', label: 'Cheating' },
+  { value: 'invalid_submission', label: 'Invalid Submission' },
+  { value: 'rule_violation', label: 'Rules Violation (Team Size, Late Submission, etc.)' },
+  { value: 'technical_issue', label: 'Technical Issue' },
   { value: 'other', label: 'Other' },
 ];
 

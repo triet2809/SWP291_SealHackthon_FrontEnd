@@ -132,7 +132,10 @@ const RankingDetail = () => {
                     <span className="fw-bold">{weightedTotal.toFixed(2)}</span>
                   </div>
                   <ProgressBar variant="primary" now={maxTotal ? (weightedTotal / maxTotal) * 100 : 0} className="rounded-pill" style={{ height: '10px' }} />
-                  {teamData.tieBreakerNote && <div className="text-muted small mt-3">{teamData.tieBreakerNote}</div>}
+                  {/* BE trả về tieBreakerReason giải thích vì sao đội này được xếp hạng như vậy khi hòa điểm */}
+                  {(teamData.tieBreakerReason || teamData.tieBreakerNote) && (
+                    <div className="text-muted small mt-3">{teamData.tieBreakerReason || teamData.tieBreakerNote}</div>
+                  )}
                 </Card.Body>
               </Card>
             </Col>

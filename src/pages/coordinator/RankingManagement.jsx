@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
-import { Trophy, Eye, Search, RefreshCw } from 'lucide-react';
+import { Trophy, Eye, Search, RefreshCw, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getRounds, getRoundRankings, recalculateRoundRankings } from '../../api/hackathonApi';
+import { getRounds, getRoundRankings, recalculateRoundRankings, publishRoundResults } from '../../api/hackathonApi';
 
 const statusVariant = (status) => {
   const s = (status || '').toLowerCase();
@@ -19,6 +19,8 @@ const RankingManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recalculating, setRecalculating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [notice, setNotice] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -78,6 +80,24 @@ const RankingManagement = () => {
     }
   };
 
+  // Công bố kết quả vòng thi -> BE mở cửa sổ khiếu nại 15 phút cho các đội.
+  const handlePublish = async () => {
+    if (!selectedRound) return;
+    if (!window.confirm('Publish results for this round? This opens a 15-minute appeal window for teams.')) return;
+    setPublishing(true);
+    setError('');
+    setNotice('');
+    try {
+      const round = await publishRoundResults(selectedRound);
+      const deadline = round?.appealDeadline ? new Date(round.appealDeadline).toLocaleTimeString() : '15 minutes';
+      setNotice(`Results published. Appeal window is open until ${deadline}.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -85,10 +105,17 @@ const RankingManagement = () => {
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Ranking Management</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Review leaderboards and manage team advancement</div>
         </div>
-        <Button variant="success" className="d-flex align-items-center gap-2" onClick={handleRecalculate} disabled={recalculating || !selectedRound}>
-          {recalculating ? <Spinner size="sm" animation="border" /> : <RefreshCw size={18} />} Recalculate Rankings
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="outline-primary" className="d-flex align-items-center gap-2" onClick={handlePublish} disabled={publishing || !selectedRound}>
+            {publishing ? <Spinner size="sm" animation="border" /> : <Send size={18} />} Publish Results
+          </Button>
+          <Button variant="success" className="d-flex align-items-center gap-2" onClick={handleRecalculate} disabled={recalculating || !selectedRound}>
+            {recalculating ? <Spinner size="sm" animation="border" /> : <RefreshCw size={18} />} Recalculate Rankings
+          </Button>
+        </div>
       </div>
+
+      {notice && <Alert variant="success" onClose={() => setNotice('')} dismissible>{notice}</Alert>}
 
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 

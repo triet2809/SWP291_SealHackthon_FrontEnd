@@ -26,6 +26,7 @@ import NoticeBoard from '../pages/team/NoticeBoard';
 import DeadlinesSchedule from '../pages/team/DeadlinesSchedule';
 import Profile from '../pages/team/Profile';
 import SupportTicket from '../pages/team/SupportTicket';
+import TeamJourney from '../pages/team/TeamJourney';
 import SupportTickets from '../pages/coordinator/SupportTickets';
 import TeamScoreDetails from '../pages/team/TeamScoreDetails';
 import TeamChat from '../pages/team/TeamChat';
@@ -77,6 +78,8 @@ import Reports from '../pages/coordinator/Reports';
 import AuditLogs from '../pages/coordinator/AuditLogs';
 import CoordinatorProfile from '../pages/coordinator/CoordinatorProfile';
 import SubmissionDetail from '../pages/coordinator/SubmissionDetail';
+import EventTimeline from '../pages/coordinator/EventTimeline';
+import AppealsInbox from '../pages/coordinator/AppealsInbox';
 
 const AppRoutes = () => {
   return (
@@ -107,6 +110,7 @@ const AppRoutes = () => {
           <Route path="submissions" element={<SubmissionManagement />} />
           <Route path="history" element={<SubmissionHistory />} />
           <Route path="history/:id" element={<TeamScoreDetails />} />
+          <Route path="journey" element={<TeamJourney />} />
           <Route path="notices" element={<NoticeBoard />} />
           <Route path="schedule" element={<DeadlinesSchedule />} />
           <Route path="support" element={<SupportTicket />} />
@@ -169,6 +173,8 @@ const AppRoutes = () => {
           <Route path="incidents" element={<IncidentReports />} />
           <Route path="incidents/:id" element={<IncidentReportDetail />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="timeline" element={<EventTimeline />} />
+          <Route path="appeals" element={<AppealsInbox />} />
           <Route path="logs" element={<AuditLogs />} />
           <Route path="support" element={<SupportTickets />} />
           <Route path="profile" element={<CoordinatorProfile />} />
