@@ -122,7 +122,7 @@ const CreateTeam = () => {
     const chosenTrack = tracks.find((t) => t.id === teamData.trackId);
     if (chosenTrack && trackIsFull(chosenTrack)) { setError('Track này đã đầy, vui lòng chọn track khác.'); return; }
     // Bắt buộc chấp thuận thể lệ (chỉ khi sự kiện có công bố thể lệ PUBLIC).
-    if (rules.length > 0 && !acceptedRules) { setError('Vui lòng đọc và đồng ý với thể lệ sự kiện trước khi tạo team.'); return; }
+    if (rules.length > 0 && !acceptedRules) { setError('Please read and agree to the event rules before creating a team.'); return; }
 
     const emails = memberEmails.map((s) => s.trim()).filter(Boolean);
     // Basic email format check for filled slots.
