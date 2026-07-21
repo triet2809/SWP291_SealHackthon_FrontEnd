@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, Button, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import { Send, AlertTriangle } from 'lucide-react';
 import {
@@ -51,17 +51,9 @@ const IncidentReportForm = ({ isJudge = false }) => {
     let active = true;
     async function load() {
       try {
-        const [evRes, trRes, tmRes, rdRes] = await Promise.all([
-          getEvents({ size: 100 }).catch(() => null),
-          getTracks({ size: 100 }).catch(() => null),
-          getTeams({ size: 200 }).catch(() => null),
-          getRounds({ size: 200 }).catch(() => null),
-        ]);
+        const evRes = await getEvents({ size: 100 }).catch(() => null);
         if (!active) return;
         setEvents(evRes?.content || evRes || []);
-        setTracks(trRes?.content || trRes || []);
-        setTeams(tmRes?.content || tmRes || []);
-        setRounds(rdRes?.content || rdRes || []);
       } catch (err) {
         if (active) setError(err.message || 'Failed to load form data');
       } finally {
@@ -74,9 +66,30 @@ const IncidentReportForm = ({ isJudge = false }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!form.eventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTracks([]); setTeams([]); setRounds([]);
+      return;
+    }
+    let active = true;
+    Promise.all([
+      getTracks({ eventId: form.eventId, size: 100 }),
+      getTeams({ eventId: form.eventId, size: 200 }),
+      getRounds({ eventId: form.eventId, size: 200 }),
+    ]).then(([trRes, tmRes, rdRes]) => {
+      if (!active) return;
+      setTracks(trRes?.content || trRes || []);
+      setTeams(tmRes?.content || tmRes || []);
+      setRounds(rdRes?.content || rdRes || []);
+    }).catch((err) => active && setError(err.message || 'Failed to load event scope'));
+    return () => { active = false; };
+  }, [form.eventId]);
+
   // load submissions for judge when team selected
   useEffect(() => {
     if (!isJudge || !form.teamId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSubmissions([]);
       return;
     }

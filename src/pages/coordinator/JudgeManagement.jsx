@@ -1,11 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Search, Mail, Edit, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUsers } from '../../api/userApi';
+import { getRounds, getRoundJudges, getTracks } from '../../api/hackathonApi';
+import EventSelector from '../../components/coordinator/EventSelector';
+import { useSearchParams } from 'react-router-dom';
 
 const JudgeManagement = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
+  const roundId = searchParams.get('roundId') || '';
+  const trackId = searchParams.get('trackId') || '';
+  const [rounds, setRounds] = useState([]);
+  const [tracks, setTracks] = useState([]);
   const [judges, setJudges] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -17,8 +25,19 @@ const JudgeManagement = () => {
       try {
         setLoading(true);
         setError('');
-        const res = await getUsers({ role: 'judge' });
-        if (active) setJudges(res.value || []);
+        const [roundData, trackData, assignmentData] = await Promise.all([
+          getRounds({ eventId, size: 200 }),
+          getTracks({ eventId, size: 200 }),
+          getRoundJudges({ eventId, ...(roundId ? { roundId } : {}), ...(trackId ? { trackId } : {}), size: 500 }),
+        ]);
+        if (active) {
+          setRounds(roundData.content || roundData || []);
+          setTracks(trackData.content || trackData || []);
+          setJudges((assignmentData.content || assignmentData || []).map((assignment) => ({
+            id: assignment.userId, fullName: assignment.fullName, email: assignment.email,
+            roles: ['judge'], status: 'approved', roundName: assignment.roundName,
+          })));
+        }
       } catch (err) {
         if (active) setError(err.message || 'Failed to load judges');
       } finally {
@@ -26,7 +45,7 @@ const JudgeManagement = () => {
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [eventId, roundId, trackId]);
 
   const filteredJudges = (judges || []).filter(
     (judge) =>
@@ -35,7 +54,9 @@ const JudgeManagement = () => {
   );
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Judge Management</h1>
@@ -47,13 +68,38 @@ const JudgeManagement = () => {
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
+        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
           <InputGroup style={{ maxWidth: '300px' }}>
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
             </InputGroup.Text>
             <Form.Control className="border-start-0" placeholder="Search judges..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </InputGroup>
+          <Form.Select value={trackId} disabled={!roundId} onChange={(e) => {
+            const next = new URLSearchParams(searchParams);
+            if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
+            next.delete('roundId'); setSearchParams(next);
+          }} style={{ maxWidth: 220 }}>
+            <option value="">All Tracks</option>
+            {tracks.filter((track) => !roundId || rounds.find((round) => round.id === roundId)?.trackId === track.id)
+              .map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
+          </Form.Select>
+          <Form.Select value={roundId} onChange={(e) => {
+            const next = new URLSearchParams(searchParams);
+            if (e.target.value) {
+              next.set('roundId', e.target.value);
+              const selected = rounds.find((round) => round.id === e.target.value);
+              if (selected?.trackId) next.set('trackId', selected.trackId);
+            } else {
+              next.delete('roundId'); next.delete('trackId');
+            }
+            setSearchParams(next);
+          }} style={{ maxWidth: 220 }}>
+            <option value="">All Rounds</option>
+            {rounds.filter((round) => !trackId || round.trackId === trackId).map((round) => (
+              <option key={round.id} value={round.id}>{round.name}</option>
+            ))}
+          </Form.Select>
         </div>
         <div className="table-responsive">
           <Table className="mb-0" hover>
@@ -97,11 +143,11 @@ const JudgeManagement = () => {
                         variant="link"
                         size="sm"
                         className="p-0 text-success me-3"
-                        onClick={() => navigate(`/coordinator/judges/${judge.id}/assign`)}
+                        onClick={() => navigate(`/coordinator/judges/${judge.id}/assign?eventId=${eventId}${roundId ? `&roundId=${roundId}` : ''}${trackId ? `&trackId=${trackId}` : ''}`)}
                       >
                         <UserPlus size={16} />
                       </Button>
-                      <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/judges/${judge.id}/edit`)}>
+                      <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/judges/${judge.id}/edit?eventId=${eventId}`)}>
                         <Edit size={16} />
                       </Button>
                     </td>
@@ -112,7 +158,8 @@ const JudgeManagement = () => {
           </Table>
         </div>
       </Card>
-    </div>
+    </div>}
+    </>
   );
 };
 

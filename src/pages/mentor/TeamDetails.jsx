@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { getMentorTeams, getTeam, getSubmissions } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
 import styles from './TeamDetails.module.css';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const progressFromStatus = (teamStatus) => {
   switch ((teamStatus || '').toLowerCase()) {
@@ -55,6 +56,7 @@ const TeamDetails = () => {
             return {
               id: t.teamId,
               teamInfo: { name: t.teamName, category: t.trackName },
+              recognitions: team?.recognitions || t.recognitions,
               project: {
                 title: sub?.repoUrl ? t.teamName : (t.teamName || 'Project'),
                 subtitle: sub?.apiMetadata || t.roundName || '',
@@ -119,6 +121,7 @@ const TeamDetails = () => {
             <div key={team.id} className={styles.teamSection}>
               <div className={styles.sectionHeader}>
                 {team.teamInfo.name} <span className={styles.sectionCategory}>· {team.teamInfo.category}</span>
+                <TeamRecognitionBadge recognitions={team.recognitions} className="ms-2" />
               </div>
 
               <Row>

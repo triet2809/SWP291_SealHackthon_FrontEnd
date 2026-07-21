@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, Table, Badge, Button, Form, Spinner, Alert, Modal } from 'react-bootstrap';
 import { MessageSquareWarning, Check, X, Reply } from 'lucide-react';
-import { getEvents, getAppeals, respondToAppeal, resolveAppeal } from '../../api/hackathonApi';
+import { getEvents, getAppeals, respondToAppeal, resolveAppeal, resumeRound, advanceRound } from '../../api/hackathonApi';
 
 const listOf = (data) => (Array.isArray(data) ? data : data?.content || []);
 
@@ -24,6 +24,7 @@ const AppealsInbox = () => {
   const [active, setActive] = useState(null); // đơn khiếu nại đang thao tác
   const [text, setText] = useState('');
   const [resolveStatus, setResolveStatus] = useState('ACCEPTED');
+  const [recalculationRequired, setRecalculationRequired] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -53,7 +54,10 @@ const AppealsInbox = () => {
     }
   }, [eventId, statusFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const openRespond = (a) => { setActive(a); setText(a.response || ''); setShowRespond(true); };
   const openResolve = (a) => { setActive(a); setText(''); setResolveStatus('ACCEPTED'); setShowResolve(true); };
@@ -76,11 +80,24 @@ const AppealsInbox = () => {
     try {
       setBusy(true);
       // response tùy chọn; status bắt buộc ACCEPTED/REJECTED.
-      await resolveAppeal(active.id, { status: resolveStatus, response: text.trim() || undefined });
+      await resolveAppeal(active.id, { status: resolveStatus, response: text.trim() || undefined, recalculationRequired });
       setShowResolve(false);
       await load();
     } catch (e) {
       setError(e.message || 'Failed to resolve');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const continueRound = async (appeal, advance) => {
+    try {
+      setBusy(true);
+      if (advance) await advanceRound(appeal.eventId, appeal.roundId);
+      else await resumeRound(appeal.eventId, appeal.roundId);
+      await load();
+    } catch (e) {
+      setError(e.message || 'Failed to continue round');
     } finally {
       setBusy(false);
     }
@@ -136,7 +153,7 @@ const AppealsInbox = () => {
                 {appeals.map((a) => (
                   <tr key={a.id}>
                     <td className="fw-medium py-3">{a.teamName}</td>
-                    <td className="py-3">{a.roundName}</td>
+                    <td className="py-3">{a.roundName}<div className="small text-muted">Version {a.resultVersion} · {a.lifecycleState}</div></td>
                     <td className="py-3" style={{ maxWidth: 320, whiteSpace: 'pre-wrap' }}>
                       {a.reason}
                       {a.response && <div className="text-muted small mt-1">Response: {a.response}</div>}
@@ -154,9 +171,20 @@ const AppealsInbox = () => {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-muted small">
-                          {a.resolvedByName ? `by ${a.resolvedByName}` : 'Resolved'}
-                        </span>
+                        <div className="d-flex gap-2 justify-content-end align-items-center">
+                          <span className="text-muted small">{a.resolvedByName ? `by ${a.resolvedByName}` : 'Resolved'}</span>
+                          {a.lifecycleState === 'PAUSED_FOR_APPEAL' && (
+                            <Button size="sm" variant="outline-primary" disabled={busy} onClick={() => continueRound(a, false)}>Resume</Button>
+                          )}
+                          {a.lifecycleState === 'READY_TO_ADVANCE' && (
+                            <>
+                              <Button size="sm" variant="primary" disabled={busy} onClick={() => continueRound(a, true)}>Advance</Button>
+                            </>
+                          )}
+                          {a.lifecycleState === 'READY_FOR_AWARDS' && (
+                            <Button size="sm" variant="outline-primary" disabled={busy} onClick={() => continueRound(a, false)}>Confirm ready</Button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -197,6 +225,7 @@ const AppealsInbox = () => {
               <option value="REJECTED">Reject appeal</option>
             </Form.Select>
           </Form.Group>
+          {resolveStatus === 'ACCEPTED' && <Form.Check className="mb-3" label="Result change requires recalculation and republication" checked={recalculationRequired} onChange={(e) => setRecalculationRequired(e.target.checked)} />}
           <Form.Group>
             <Form.Label className="fw-medium">Response (optional)</Form.Label>
             <Form.Control as="textarea" rows={3} value={text} onChange={(e) => setText(e.target.value)}

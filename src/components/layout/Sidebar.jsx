@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -17,8 +17,6 @@ import {
   Zap,
   Bell,
   FileText,
-  Star,
-  Clock,
   AlertTriangle,
   BarChart2,
   LifeBuoy,
@@ -30,6 +28,7 @@ import { Badge } from 'react-bootstrap';
 import { logout } from '../../api/authApi';
 import { getUnreadSummary } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
+import { getDashboardRoles, getActiveRole, routeForRole, setActiveRole } from '../../utils/authSession';
 
 // Which notification category lights up which menu path (red dot).
 const CATEGORY_BY_PATH = {
@@ -53,6 +52,13 @@ const Sidebar = ({ role }) => {
     role: fallback.role || (stored?.roles && stored.roles[0]) || role,
     initials: getInitials(stored?.fullName || fallback.name || 'User'),
   };
+  const dashboardRoles = getDashboardRoles(stored);
+  const activeRole = getActiveRole(stored);
+  const switchRole = (event) => {
+    const next = event.target.value;
+    setActiveRole(next);
+    navigate(routeForRole(next));
+  };
 
   // Define links based on role
 
@@ -63,6 +69,7 @@ const Sidebar = ({ role }) => {
           { name: 'Overview', path: '/team/dashboard', icon: LayoutDashboard },
           { name: 'Track Topic', path: '/team/topic', icon: FileText },
           { name: 'My Team', path: '/team/my-team', icon: Users },
+          { name: 'Previous Teams', path: '/team/previous-teams', icon: History },
           { name: 'Team Members', path: '/team/members', icon: Users },
           { name: 'Join Requests', path: '/team/join-requests', icon: UserPlus },
           { name: 'Team Chat', path: '/team/chat', icon: MessageSquare },
@@ -72,6 +79,7 @@ const Sidebar = ({ role }) => {
           { name: 'Notice Board', path: '/team/notices', icon: Bell },
           { name: 'Deadlines & Schedule', path: '/team/schedule', icon: Calendar },
           { name: 'Support Ticket', path: '/team/support', icon: MessageSquare },
+          { name: 'Report & Support', path: '/team/cases', icon: MessageSquare },
           { name: 'Profile', path: '/team/profile', icon: User },
         ];
       case 'student':
@@ -79,6 +87,7 @@ const Sidebar = ({ role }) => {
           { name: 'Overview', path: '/student/dashboard', icon: LayoutDashboard },
           { name: 'Create Team', path: '/student/create-team', icon: Users },
           { name: 'Join Team', path: '/student/join-team', icon: UserPlus },
+          { name: 'Previous Teams', path: '/student/previous-teams', icon: History },
           { name: 'Profile', path: '/student/profile', icon: User },
         ];
       case 'mentor':
@@ -103,19 +112,20 @@ const Sidebar = ({ role }) => {
           { name: 'Event Manage...', path: '/coordinator/events', icon: Calendar },
           { name: 'Teams', path: '/coordinator/teams', icon: Users },
           { name: 'Submissions', path: '/coordinator/submissions', icon: Upload },
-          { name: 'Mentors', path: '/coordinator/mentors', icon: Star },
-          { name: 'Judges', path: '/coordinator/judges', icon: Award },
+          { name: 'Judge & Mentor Management', path: '/coordinator/staff', icon: Users },
           { name: 'User Approvals', path: '/coordinator/users', icon: User },
           { name: 'Criteria', path: '/coordinator/criteria', icon: FileCheck },
           { name: 'Scoring Analytics', path: '/coordinator/scoring', icon: BarChart2 },
           { name: 'Rankings', path: '/coordinator/ranking', icon: Award },
           { name: 'Appeals', path: '/coordinator/appeals', icon: AlertTriangle },
+          { name: 'Seeding Review', path: '/coordinator/seeding', icon: Award },
           { name: 'Team Timeline', path: '/coordinator/timeline', icon: RouteIcon },
           { name: 'Awards', path: '/coordinator/awards', icon: Award },
           { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
           { name: 'Reports', path: '/coordinator/reports', icon: FileText },
           { name: 'Audit Logs', path: '/coordinator/logs', icon: History },
           { name: 'Support Tickets', path: '/coordinator/support', icon: LifeBuoy },
+          { name: 'Case Management', path: '/coordinator/cases', icon: LifeBuoy },
           { name: 'Profile', path: '/coordinator/profile', icon: User },
         ];
       default:
@@ -172,6 +182,11 @@ const Sidebar = ({ role }) => {
           } className={styles.roleBadge}>
             {user.role}
           </Badge>
+          {dashboardRoles.length > 1 && (
+            <select className="form-select form-select-sm mt-2" value={activeRole || role} onChange={switchRole} aria-label="Switch active role">
+              {dashboardRoles.map((item) => <option key={item} value={item}>{item.replace('_', ' ')}</option>)}
+            </select>
+          )}
         </div>
       </div>
 

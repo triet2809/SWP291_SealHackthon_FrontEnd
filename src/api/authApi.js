@@ -1,5 +1,8 @@
 import { API_BASE_URL } from '../config/registerConfig';
-import { apiGet } from './client';
+import { apiGet, apiPost } from './client';
+import { clearStoredAuth } from '../utils/authSession';
+
+export { clearStoredAuth } from '../utils/authSession';
 
 async function postJson(path, body) {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -8,7 +11,7 @@ async function postJson(path, body) {
     body: JSON.stringify(body),
   });
 
-  let data = null;
+  let data;
   try {
     data = await res.json();
   } catch {
@@ -18,7 +21,7 @@ async function postJson(path, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
-export function registerFpt({ fullName, email, password, studentId, campusId }) {
+export function registerFpt({ fullName, email, password, studentId, campusId, acceptedTerms }) {
   return postJson('/auth/register', {
     fullName,
     email,
@@ -26,16 +29,18 @@ export function registerFpt({ fullName, email, password, studentId, campusId }) 
     studentId,
     campusId: campusId || null,
     studentType: 'fpt',
+    acceptedTerms,
   });
 }
 
-export function registerExternal({ fullName, email, password, universityName }) {
+export function registerExternal({ fullName, email, password, universityName, acceptedTerms }) {
   return postJson('/auth/register', {
     fullName,
     email,
     password,
     universityName,
     studentType: 'external',
+    acceptedTerms,
   });
 }
 
@@ -44,16 +49,30 @@ export function login({ email, password }) {
 }
 
 export async function logout() {
-  // Full backend currently has no /auth/logout endpoint. Logout is local token clear.
-  clearStoredAuth();
-  return { ok: true, status: 204, data: null };
+  const refreshToken = localStorage.getItem('seal_refresh_token');
+  try {
+    return await apiPost('/auth/logout', refreshToken ? { refreshToken } : {});
+  } finally {
+    clearStoredAuth();
+  }
 }
 
-export function clearStoredAuth() {
-  localStorage.removeItem('seal_access_token');
-  localStorage.removeItem('seal_refresh_token');
-  localStorage.removeItem('seal_token_type');
-  localStorage.removeItem('seal_user');
+export async function validateActivation(token) {
+  const res = await apiGet(`/auth/activate/validate?token=${encodeURIComponent(token)}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Invalid activation link');
+  return res.data;
+}
+
+export async function activateAccount(payload) {
+  const res = await apiPost('/auth/activate', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Activation failed');
+  return res.data;
+}
+
+export async function completeOnboarding(payload) {
+  const res = await apiPost('/auth/onboarding', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Onboarding failed');
+  return res.data?.data || res.data;
 }
 
 export async function me() {

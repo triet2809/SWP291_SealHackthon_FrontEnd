@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Badge, Button, Row, Col, Table, Spinner, Alert } from 'react-bootstrap';
-import { ArrowLeft, Users, FolderOpen, Target, Activity, Ban, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Users, FolderOpen, Activity, Ban, RotateCcw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTeam, getTrack, disqualifyTeam, reactivateTeam } from '../../api/hackathonApi';
+import {
+  getTeam, getTrack, disqualifyTeam, reactivateTeam,
+  getTeamRecognitionEvidence, recalculateTeamRecognitions, revokeTeamRecognition,
+  restoreTeamRecognition,
+} from '../../api/hackathonApi';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const TeamDetail = () => {
   const navigate = useNavigate();
@@ -12,6 +17,7 @@ const TeamDetail = () => {
   const [error, setError] = useState('');
   const [team, setTeam] = useState(null);
   const [track, setTrack] = useState(null);
+  const [evidence, setEvidence] = useState(null);
 
   const loadTeam = async () => {
     try {
@@ -19,6 +25,9 @@ const TeamDetail = () => {
       setError('');
       const data = await getTeam(id);
       setTeam(data);
+      if (data?.teamProfileId) {
+        try { setEvidence(await getTeamRecognitionEvidence(data.teamProfileId)); } catch { setEvidence(null); }
+      }
       if (data?.trackId) {
         try { setTrack(await getTrack(data.trackId)); } catch { setTrack(null); }
       }
@@ -30,6 +39,8 @@ const TeamDetail = () => {
   };
 
   useEffect(() => {
+    // The loader synchronizes this page with the route's team id.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeam();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -54,6 +65,41 @@ const TeamDetail = () => {
       await loadTeam();
     } catch (err) {
       setError(err.message || 'Failed to reactivate team');
+    }
+  };
+
+  const handleRecalculateRecognition = async () => {
+    try {
+      setError('');
+      setEvidence(await recalculateTeamRecognitions(team.teamProfileId));
+      await loadTeam();
+    } catch (err) {
+      setError(err.message || 'Failed to recalculate recognition');
+    }
+  };
+
+  const handleRevokeRecognition = async () => {
+    const reason = window.prompt('Enter the administrative correction reason:');
+    if (!reason?.trim()) return;
+    try {
+      setError('');
+      setEvidence(await revokeTeamRecognition(
+        team.teamProfileId, evidence.recognitionId, reason.trim(),
+      ));
+      await loadTeam();
+    } catch (err) {
+      setError(err.message || 'Failed to revoke recognition');
+    }
+  };
+
+  const handleRestoreRecognition = async () => {
+    if (!window.confirm('Restore this recognition after coordinator review?')) return;
+    try {
+      setError('');
+      setEvidence(await restoreTeamRecognition(team.teamProfileId, evidence.recognitionId));
+      await loadTeam();
+    } catch (err) {
+      setError(err.message || 'Failed to restore recognition');
     }
   };
 
@@ -86,6 +132,7 @@ const TeamDetail = () => {
         </Button>
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>{team.name}</h1>
+          <TeamRecognitionBadge recognitions={team.recognitions} variant="detailed" />
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Team ID: #{team.id}</div>
         </div>
         <div className="ms-auto d-flex align-items-center gap-2">
@@ -172,6 +219,51 @@ const TeamDetail = () => {
           </Card>
         </Col>
       </Row>
+
+      <Card className="border-0 shadow-sm">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center gap-3 mb-3">
+            <div>
+              <h5 className="fw-bold mb-1">Recognition evidence</h5>
+              <div className="text-muted small">
+                {evidence?.distinctQualifyingSeasons || 0} distinct completed qualifying seasons
+              </div>
+            </div>
+            <div className="d-flex gap-2">
+              <Button variant="outline-primary" size="sm" onClick={handleRecalculateRecognition}>
+                Recalculate
+              </Button>
+              {evidence?.recognition?.active && (
+                <Button variant="outline-danger" size="sm" onClick={handleRevokeRecognition}>
+                  Revoke
+                </Button>
+              )}
+              {evidence?.recognition && !evidence.recognition.active && evidence.recognitionId && (
+                <Button variant="outline-success" size="sm" onClick={handleRestoreRecognition}>
+                  Restore
+                </Button>
+              )}
+            </div>
+          </div>
+          <Table responsive className="mb-0">
+            <thead>
+              <tr><th>Event</th><th>Track</th><th>Final placement</th><th>Completed</th></tr>
+            </thead>
+            <tbody>
+              {!evidence?.qualifyingSeasons?.length ? (
+                <tr><td colSpan={4} className="text-center text-muted py-3">No qualifying immutable finishes.</td></tr>
+              ) : evidence.qualifyingSeasons.map((season) => (
+                <tr key={season.finishId}>
+                  <td>{season.eventName}</td>
+                  <td>{season.trackName}</td>
+                  <td>#{season.finalPlacement}</td>
+                  <td>{new Date(season.completedAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
     </div>
   );
 };

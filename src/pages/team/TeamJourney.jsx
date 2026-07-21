@@ -1,25 +1,34 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, Spinner, Alert, Badge, Button, Modal, Form, Row, Col } from 'react-bootstrap';
 import { Route as RouteIcon, MessageSquareWarning, Clock } from 'lucide-react';
 import {
-  getMyTeams, getMyTeamTimeline, getRounds, getRoundRankings,
+  getMyTeams, getMyTeamTimeline, getRounds,
   getTeamAppeals, createAppeal,
 } from '../../api/hackathonApi';
-import TeamJourneyTimeline from '../../components/timeline/TeamJourneyTimeline';
+import TeamTimeline from '../../components/timeline/TeamTimeline';
+import { getStoredUser } from '../../utils/authUser';
 
 const listOf = (data) => (Array.isArray(data) ? data : data?.content || []);
 
 // Đếm ngược thời gian còn lại tới hạn chót khiếu nại. Trả về chuỗi mm:ss hoặc null nếu đã hết hạn.
-function useCountdown(deadline) {
-  const [remaining, setRemaining] = useState(0);
+function useCountdown(deadline, serverRemainingSeconds) {
+  const [remaining, setRemaining] = useState(() =>
+    serverRemainingSeconds != null
+      ? Math.max(0, serverRemainingSeconds * 1000)
+      : deadline ? Math.max(0, new Date(deadline).getTime() - Date.now()) : 0
+  );
   useEffect(() => {
-    if (!deadline) { setRemaining(0); return undefined; }
-    const target = new Date(deadline).getTime();
-    const tick = () => setRemaining(Math.max(0, target - Date.now()));
-    tick();
+    const target = serverRemainingSeconds != null
+      ? Date.now() + serverRemainingSeconds * 1000
+      : new Date(deadline).getTime();
+    const tick = () => setRemaining(deadline ? Math.max(0, target - Date.now()) : 0);
+    const first = setTimeout(tick, 0);
     const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [deadline]);
+    return () => {
+      clearTimeout(first);
+      clearInterval(t);
+    };
+  }, [deadline, serverRemainingSeconds]);
   return remaining;
 }
 
@@ -68,9 +77,8 @@ const TeamJourney = () => {
       if (current.trackId) {
         try {
           const rounds = listOf(await getRounds({ trackId: current.trackId, size: 100 }));
-          const now = Date.now();
           const open = rounds.filter(
-            (r) => r.resultPublishedAt && r.appealDeadline && new Date(r.appealDeadline).getTime() > now
+            (r) => r.resultPublishedAt && r.appealDeadline && r.lifecycleState === 'APPEAL_WINDOW_OPEN'
           );
           setOpenRounds(open);
         } catch { /* optional */ }
@@ -82,7 +90,10 @@ const TeamJourney = () => {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const openAppealModal = (round) => {
     setAppealRound(round);
@@ -117,6 +128,8 @@ const TeamJourney = () => {
   // Đội đã có khiếu nại PENDING cho vòng nào thì ẩn nút nộp mới cho vòng đó.
   const hasPendingForRound = (roundId) =>
     existingAppeals.some((a) => String(a.roundId) === String(roundId) && a.status === 'PENDING');
+  const userId = getStoredUser()?.id;
+  const isLeader = team.members?.some((m) => String(m.userId) === String(userId) && String(m.role).toLowerCase() === 'leader');
 
   return (
     <div className="py-2">
@@ -146,6 +159,7 @@ const TeamJourney = () => {
                 key={r.id}
                 round={r}
                 pending={hasPendingForRound(r.id)}
+                leader={isLeader}
                 onAppeal={() => openAppealModal(r)}
               />
             ))}
@@ -166,6 +180,7 @@ const TeamJourney = () => {
                   {a.status}
                 </Badge>
                 <span className="small">{a.roundName}</span>
+                <span className="text-muted small">Version {a.resultVersion}</span>
                 <span className="text-muted small">— {a.reason}</span>
                 {a.response && <span className="text-muted small">· Response: {a.response}</span>}
               </div>
@@ -179,7 +194,7 @@ const TeamJourney = () => {
           <h5 className="fw-bold mb-0">Timeline</h5>
         </Card.Header>
         <Card.Body className="p-4">
-          <TeamJourneyTimeline events={events} />
+          <TeamTimeline items={events} />
         </Card.Body>
       </Card>
 
@@ -218,8 +233,8 @@ const TeamJourney = () => {
 };
 
 // Một dòng vòng thi đang mở cửa sổ khiếu nại kèm đồng hồ đếm ngược.
-const AppealRow = ({ round, pending, onAppeal }) => {
-  const remaining = useCountdown(round.appealDeadline);
+const AppealRow = ({ round, pending, leader, onAppeal }) => {
+  const remaining = useCountdown(round.appealDeadline, round.remainingSeconds);
   const expired = remaining <= 0;
   return (
     <Row className="align-items-center py-2 border-bottom">
@@ -233,8 +248,8 @@ const AppealRow = ({ round, pending, onAppeal }) => {
         {pending ? (
           <Badge bg="warning">Appeal pending</Badge>
         ) : (
-          <Button size="sm" variant="outline-warning" disabled={expired} onClick={onAppeal}>
-            Appeal
+          <Button size="sm" variant="outline-warning" disabled={expired || !leader} onClick={onAppeal}>
+            {leader ? 'Appeal' : 'Leader only'}
           </Button>
         )}
       </Col>

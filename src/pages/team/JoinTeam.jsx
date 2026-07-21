@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Badge, InputGroup, Nav, Tab, Alert, Spinner } from 'react-bootstrap';
 import { Key, Search, Users, ArrowRight, UserPlus, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { joinTeamByInviteCode, getTeams, createJoinRequest, getMyJoinRequests } from '../../api/hackathonApi';
+import { joinTeamByInviteCode, getTeams, getEvents, createJoinRequest, getMyJoinRequests } from '../../api/hackathonApi';
 
 const MAX_TEAM_SIZE = 5;
 
@@ -19,13 +19,15 @@ const JoinTeam = () => {
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [browseError, setBrowseError] = useState('');
   const [requestState, setRequestState] = useState({});
+  const [events, setEvents] = useState([]);
+  const [eventId, setEventId] = useState('');
 
   const loadBrowse = async () => {
     setTeamsLoading(true);
     setBrowseError('');
     try {
       const [teamsRes, myReqs] = await Promise.all([
-        getTeams({ size: 200 }),
+        getTeams({ eventId, size: 200 }),
         getMyJoinRequests().catch(() => []),
       ]);
       const list = teamsRes?.content || teamsRes || [];
@@ -44,9 +46,13 @@ const JoinTeam = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'browse' && teams.length === 0 && !teamsLoading) loadBrowse();
+    if (activeTab === 'browse' && events.length === 0) {
+      getEvents({ size: 100 }).then((data) => setEvents(data?.content || data || [])).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (activeTab === 'browse' && eventId && !teamsLoading) loadBrowse();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, eventId]);
 
   const handleJoinViaCode = async (e) => {
     e.preventDefault();
@@ -160,6 +166,10 @@ const JoinTeam = () => {
           <Tab.Pane eventKey="browse">
             <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <Card.Body className="p-4">
+                <Form.Select className="mb-3" value={eventId} onChange={(e) => { setEventId(e.target.value); setTeams([]); }}>
+                  <option value="">Select an event to browse teams</option>
+                  {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
+                </Form.Select>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <h5 className="fw-bold mb-0" style={{ color: 'var(--cf-text-primary)' }}>
                     Teams looking for members

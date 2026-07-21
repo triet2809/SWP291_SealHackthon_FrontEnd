@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Zap } from 'lucide-react';
@@ -19,6 +19,7 @@ const Register = () => {
   const [universityName, setUniversityName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [campuses, setCampuses] = useState(FPT_CAMPUSES);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -49,11 +50,15 @@ const Register = () => {
       setError('Passwords do not match');
       return;
     }
+    if (!acceptedTerms) {
+      setError('You must accept the Terms and Conditions and Privacy Policy');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = studentType === 'fpt'
-        ? await registerFpt({ fullName, email, password, studentId, campusId })
-        : await registerExternal({ fullName, email, password, universityName });
+        ? await registerFpt({ fullName, email, password, studentId, campusId, acceptedTerms })
+        : await registerExternal({ fullName, email, password, universityName, acceptedTerms });
       if (!res.ok) {
         // Surface backend field-level validation errors (e.g. password too short,
         // invalid email) instead of the generic "Validation failed" message.
@@ -177,6 +182,15 @@ const Register = () => {
                   </Form.Group>
                 </Col>
               </Row>
+
+              <Form.Check
+                className="mb-3"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                label="I agree to the Terms and Conditions and Privacy Policy."
+                required
+              />
 
               <Button variant="primary" type="submit" className="w-100 py-2" disabled={submitting}>
                 {submitting ? <><Spinner size="sm" className="me-2" />Creating...</> : 'Create Account'}

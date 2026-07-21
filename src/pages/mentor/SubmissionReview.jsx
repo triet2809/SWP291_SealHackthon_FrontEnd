@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Button, Spinner, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { getMentorTeams, getSubmissions, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 import styles from './SubmissionReview.module.css';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const SubmissionReview = () => {
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ const SubmissionReview = () => {
                     <div className={styles.projectInfo}>
                       <div className={styles.teamAndProject}>
                         {submission.teamNameResolved} — {submission.repoUrl ? 'Repo submitted' : 'Submission'}
+                        <TeamRecognitionBadge recognitions={submission.recognitions} className="ms-2" />
                       </div>
                       <div className={styles.submissionDetails}>
                         Submitted {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : '—'}

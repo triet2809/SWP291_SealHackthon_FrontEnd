@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Table, Spinner, Alert } from 'react-bootstrap';
+import { useEffect, useMemo, useState } from 'react';
+import { Card, Table, Spinner, Alert, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { getJudgeSubmissions, getScores, markAllNotificationsRead } from '../../api/hackathonApi';
+import { getMyJudgeSubmissions, getScores, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
 import styles from './AssignedSubmissions.module.css';
+import { useSearchParams } from 'react-router-dom';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const asArray = (data) => data?.content || data || [];
 
@@ -11,6 +13,11 @@ const AssignedSubmissions = () => {
   const navigate = useNavigate();
   const user = getStoredUser();
   const judgeId = user?.id;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
+  const roundId = searchParams.get('roundId') || '';
+  const trackId = searchParams.get('trackId') || '';
+  const [assignments, setAssignments] = useState([]);
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +27,7 @@ const AssignedSubmissions = () => {
     markAllNotificationsRead('submissions').catch(() => {});
     markAllNotificationsRead('assignments').catch(() => {});
     if (!judgeId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('No logged-in judge found.');
       setLoading(false);
       return;
@@ -27,10 +35,11 @@ const AssignedSubmissions = () => {
     let active = true;
     (async () => {
       try {
-        const subs = asArray(await getJudgeSubmissions(judgeId));
-        const roundIds = Array.from(new Set(subs.map((s) => s.roundId).filter(Boolean)));
+        const all = asArray(await getMyJudgeSubmissions());
+        const subs = eventId ? asArray(await getMyJudgeSubmissions({ eventId, ...(roundId ? { roundId } : {}), ...(trackId ? { trackId } : {}) })) : all;
+        setAssignments(all);
         const scoreLists = await Promise.all(
-          roundIds.map((rid) => getScores({ roundId: rid, size: 200 }).catch(() => null))
+          subs.map((submission) => getScores({ submissionId: submission.submissionId, size: 200 }).catch(() => null))
         );
         const myScores = scoreLists
           .flatMap((r) => asArray(r))
@@ -50,9 +59,15 @@ const AssignedSubmissions = () => {
             id: s.submissionId,
             initials: getInitials(s.teamName),
             teamName: s.teamName,
+            recognitions: s.recognitions,
             project: s.roundName,
-            track: s.roundName,
+            event: s.eventName,
+            track: s.trackName,
             round: s.roundName,
+            repoUrl: s.repoUrl,
+            presentationUrl: s.presentationUrl,
+            demoUrl: s.demoUrl,
+            reviewStatus: s.reviewStatus,
             submitted: s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : '—',
             status: scored ? 'Completed' : 'Pending',
             score: scored ? `${avg.toFixed(0)}/100` : null,
@@ -68,7 +83,7 @@ const AssignedSubmissions = () => {
     return () => {
       active = false;
     };
-  }, [judgeId]);
+  }, [judgeId, eventId, roundId, trackId]);
 
   const totals = useMemo(() => {
     const total = rows.length;
@@ -94,6 +109,25 @@ const AssignedSubmissions = () => {
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
+      <div className="d-flex gap-2 mb-3">
+        <Form.Select value={eventId} onChange={(e) => {
+          const next = new URLSearchParams(); if (e.target.value) next.set('eventId', e.target.value); setSearchParams(next);
+        }}>
+          <option value="">Select assigned event</option>
+          {[...new Map(assignments.map((a) => [a.eventId, a])).values()].map((a) => <option key={a.eventId} value={a.eventId}>{a.eventName}</option>)}
+        </Form.Select>
+        <Form.Select value={roundId} disabled={!eventId} onChange={(e) => {
+          const next = new URLSearchParams(searchParams);
+          if (e.target.value) {
+            next.set('roundId', e.target.value);
+            const selected = assignments.find((a) => a.roundId === e.target.value); if (selected?.trackId) next.set('trackId', selected.trackId);
+          } else { next.delete('roundId'); next.delete('trackId'); }
+          setSearchParams(next);
+        }}>
+          <option value="">All assigned rounds</option>
+          {[...new Map(assignments.filter((a) => a.eventId === eventId).map((a) => [a.roundId, a])).values()].map((a) => <option key={a.roundId} value={a.roundId}>{a.roundName}</option>)}
+        </Form.Select>
+      </div>
 
       <Card className={styles.tableCard}>
         <Table responsive className={styles.judgeTable}>
@@ -103,6 +137,7 @@ const AssignedSubmissions = () => {
               <th>PROJECT</th>
               <th>TRACK</th>
               <th>ROUND</th>
+              <th>RESOURCES</th>
               <th>SUBMITTED</th>
               <th>STATUS</th>
               <th>SCORE</th>
@@ -112,7 +147,7 @@ const AssignedSubmissions = () => {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center text-muted py-4">
+                <td colSpan={9} className="text-center text-muted py-4">
                   No assigned submissions.
                 </td>
               </tr>
@@ -125,6 +160,7 @@ const AssignedSubmissions = () => {
                       {submission.initials}
                     </div>
                     <span className={styles.teamName}>{submission.teamName}</span>
+                    <TeamRecognitionBadge recognitions={submission.recognitions} />
                   </div>
                 </td>
                 <td>{submission.project}</td>
@@ -133,6 +169,11 @@ const AssignedSubmissions = () => {
                 </td>
                 <td>
                   <span className={styles.categoryBadge}>{submission.round}</span>
+                </td>
+                <td>
+                  {submission.repoUrl && <a href={submission.repoUrl} target="_blank" rel="noreferrer">Repo</a>}
+                  {submission.presentationUrl && <> · <a href={submission.presentationUrl} target="_blank" rel="noreferrer">Slides</a></>}
+                  {submission.demoUrl && <> · <a href={submission.demoUrl} target="_blank" rel="noreferrer">Demo</a></>}
                 </td>
                 <td>{submission.submitted}</td>
                 <td>

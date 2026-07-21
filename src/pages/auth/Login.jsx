@@ -1,22 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
-import { Zap, Users, Award, Calendar, ArrowRight } from 'lucide-react';
-import { users } from '../../data/mockData';
+import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { Zap, Users, Award, Calendar } from 'lucide-react';
 import { login } from '../../api/authApi';
 import { getMyTeams } from '../../api/hackathonApi';
 import styles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
-
-const routeByRole = (roles = []) => {
-  const r = roles.map((x) => String(x).toLowerCase());
-  if (r.includes('coordinator')) return '/coordinator/dashboard';
-  if (r.includes('mentor')) return '/mentor/dashboard';
-  if (r.includes('judge')) return '/judge/dashboard';
-  // Participant landing is decided after checking team membership (see resolveParticipantRoute).
-  if (r.includes('team_leader') || r.includes('team_member')) return null;
-  return null;
-};
+import { getDashboardRoles, routeForRole, setActiveRole } from '../../utils/authSession';
 
 // Participants with a team land in the team workspace; those without a team
 // land in the student area where they can create or join a team.
@@ -43,14 +33,6 @@ const Login = () => {
     return () => setForceTheme(null);
   }, [setForceTheme]);
 
-  const handleDemoLogin = (role) => {
-    if (role === 'student') {
-      navigate('/student');
-    } else {
-      navigate(`/${role}/dashboard`);
-    }
-  };
-
   const handleStandardLogin = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -70,8 +52,16 @@ const Login = () => {
       localStorage.setItem('seal_refresh_token', auth.refreshToken || '');
       localStorage.setItem('seal_token_type', auth.tokenType || 'Bearer');
       localStorage.setItem('seal_user', JSON.stringify(auth.user || {}));
-      const staticRoute = routeByRole(auth.user?.roles);
-      const dest = staticRoute || await resolveParticipantRoute();
+      if (auth.user?.onboardingRequired) {
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+      const dashboardRoles = getDashboardRoles(auth.user);
+      const dest = dashboardRoles.length > 1
+        ? '/select-role'
+        : dashboardRoles.length === 1
+          ? (setActiveRole(dashboardRoles[0]), routeForRole(dashboardRoles[0]))
+          : await resolveParticipantRoute();
       navigate(dest, { replace: true });
     } catch {
       setError('Could not connect to the server');
@@ -171,34 +161,6 @@ const Login = () => {
               </Link>
             </div>
 
-            <div className={styles.demoSection}>
-              <div className={styles.demoDivider}>
-                <span>DEMO ACCESS</span>
-              </div>
-
-              <div className={styles.demoCards}>
-                {Object.entries(users).map(([role, user]) => (
-                  <Card 
-                    key={role} 
-                    className={styles.demoCard} 
-                    onClick={() => handleDemoLogin(role)}
-                  >
-                    <Card.Body className="d-flex align-items-center justify-content-between p-3">
-                      <div className="d-flex align-items-center gap-3">
-                        <div className={styles.demoAvatar} data-role={role}>
-                          {user.initials}
-                        </div>
-                        <div>
-                          <div className={styles.demoName}>{user.name}</div>
-                          <div className={styles.demoRole}>{user.role}</div>
-                        </div>
-                      </div>
-                      <ArrowRight size={16} className="text-muted" />
-                    </Card.Body>
-                  </Card>
-                ))}
-              </div>
-            </div>
           </div>
         </Col>
       </Row>

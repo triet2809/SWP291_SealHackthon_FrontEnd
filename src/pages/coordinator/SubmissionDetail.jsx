@@ -1,11 +1,22 @@
-import React from 'react';
-import { Card, Row, Col, Badge, Button, ProgressBar, Table } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Card, Row, Col, Badge, Button, ProgressBar } from 'react-bootstrap';
 import { ArrowLeft, ExternalLink, Code, FileText, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getSubmission } from '../../api/hackathonApi';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const SubmissionDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [recognitions, setRecognitions] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    getSubmission(id).then((data) => {
+      if (active) setRecognitions(data?.recognitions || []);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [id]);
 
   // Mock data for the detailed view
   const submission = {
@@ -66,6 +77,7 @@ const SubmissionDetail = () => {
                   <h4 className="fw-bold mb-2">{submission.projectName}</h4>
                   <div className="d-flex align-items-center gap-2 text-muted small">
                     <span>By <strong>{submission.teamName}</strong></span>
+                    <TeamRecognitionBadge recognitions={recognitions} />
                     <span>•</span>
                     <Badge bg="secondary">{submission.track}</Badge>
                     <Badge bg="info" text="dark">{submission.round}</Badge>

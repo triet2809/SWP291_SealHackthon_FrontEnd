@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Spinner, Alert } from 'react-bootstrap';
 import { getMyTeams } from '../../api/hackathonApi';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 import styles from './TeamMembers.module.css';
 
 const getInitials = (name = '') =>
@@ -48,6 +49,7 @@ const TeamMembers = () => {
         <div className={styles.pageSubtitle}>
           {members.length} members{team ? ` · ${team.name}` : ''}
         </div>
+        <TeamRecognitionBadge recognitions={team?.recognitions} className="mt-2" />
       </div>
 
       <Card className={styles.tableCard}>

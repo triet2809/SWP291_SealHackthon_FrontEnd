@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, Badge, Button, Row, Col, ProgressBar, Spinner, Alert } from 'react-bootstrap';
 import { ArrowLeft, Trophy, RefreshCw } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getRoundRankings, recalculateRoundRankings } from '../../api/hackathonApi';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const statusVariant = (status) => {
   const s = (status || '').toLowerCase();
@@ -41,7 +42,11 @@ const RankingDetail = () => {
     }
   }, [roundId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    // Load rankings when the selected round changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
 
   const handleRecalculate = async () => {
     if (!roundId) return;
@@ -78,6 +83,7 @@ const RankingDetail = () => {
         <div className="flex-grow-1">
           <div className="d-flex align-items-center gap-3 mb-1">
             <h1 className="h3 fw-bold mb-0" style={{ color: 'var(--cf-text-primary)' }}>{teamData?.teamName || 'Ranking Detail'}</h1>
+            <TeamRecognitionBadge recognitions={teamData?.recognitions} variant="detailed" />
             {teamData?.status && (
               <Badge bg={statusVariant(teamData.status)} className="fs-6" text={statusVariant(teamData.status) === 'warning' ? 'dark' : 'light'}>
                 {teamData.status}

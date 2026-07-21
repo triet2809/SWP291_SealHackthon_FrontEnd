@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
-import { Clock, Users, FileText, Award, Calendar, CheckCircle, Key, Copy, Check } from 'lucide-react';
+import { Clock, Users, FileText, Award, CheckCircle, Key, Copy, Check } from 'lucide-react';
 import { getMyTeams, getTrack, getRounds, getSubmissions, getNotices } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 import styles from './TeamDashboard.module.css';
 
 const TeamDashboard = () => {
@@ -94,6 +95,7 @@ const TeamDashboard = () => {
         <p className="text-muted mb-0">
           {team ? team.name : 'No team'} • <span className="text-primary fw-medium">{daysRemaining} days to next deadline</span>
         </p>
+        <TeamRecognitionBadge recognitions={team?.recognitions} variant="detailed" className="mt-2" />
       </div>
 
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}

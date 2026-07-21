@@ -1,14 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Search, BarChart2 } from 'lucide-react';
-import { getRounds, getJudgeVariance } from '../../api/hackathonApi';
+import { getRounds, getJudgeVariance, getTracks } from '../../api/hackathonApi';
+import EventSelector from '../../components/coordinator/EventSelector';
+import { useSearchParams } from 'react-router-dom';
 
 const HIGH_VARIANCE = 10;
 
 const ScoringAnalytics = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
+  const selectedRound = searchParams.get('roundId') || '';
+  const trackId = searchParams.get('trackId') || '';
   const [searchTerm, setSearchTerm] = useState('');
   const [rounds, setRounds] = useState([]);
-  const [selectedRound, setSelectedRound] = useState('');
+  const [tracks, setTracks] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,33 +22,41 @@ const ScoringAnalytics = () => {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getRounds({ size: 100 });
+        const [data, trackData] = await Promise.all([
+          getRounds({ eventId, size: 100 }), getTracks({ eventId, size: 100 }),
+        ]);
         const list = data.content || data || [];
         setRounds(list);
-        if (list.length) setSelectedRound(list[0].id);
+        setTracks(trackData.content || trackData || []);
+        if (list.length && !selectedRound) {
+          const next = new URLSearchParams(searchParams);
+          next.set('roundId', list[0].id); setSearchParams(next);
+        }
         else setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
       }
     })();
-  }, []);
+  }, [eventId, selectedRound, searchParams, setSearchParams]);
 
   const loadVariance = useCallback(async (roundId) => {
     if (!roundId) return;
     setLoading(true);
     setError('');
     try {
-      const data = await getJudgeVariance(roundId);
+      const data = await getJudgeVariance(eventId, roundId, trackId);
       setRows(Array.isArray(data) ? data : data?.content || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eventId, trackId]);
 
   useEffect(() => {
+    // Synchronize analytics with the URL-selected round.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedRound) loadVariance(selectedRound);
   }, [selectedRound, loadVariance]);
 
@@ -52,7 +66,9 @@ const ScoringAnalytics = () => {
   );
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Scoring Analytics</h1>
@@ -80,11 +96,22 @@ const ScoringAnalytics = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
-          <Form.Select style={{ maxWidth: '260px' }} value={selectedRound} onChange={(e) => setSelectedRound(e.target.value)}>
+          <Form.Select style={{ maxWidth: '260px' }} value={selectedRound} onChange={(e) => {
+            const next = new URLSearchParams(searchParams); next.set('roundId', e.target.value); next.delete('trackId'); setSearchParams(next);
+          }}>
             {rounds.length === 0 && <option value="">No rounds available</option>}
             {rounds.map((r) => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
+          </Form.Select>
+          <Form.Select style={{ maxWidth: 220 }} value={trackId} onChange={(e) => {
+            const next = new URLSearchParams(searchParams);
+            if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
+            setSearchParams(next);
+          }}>
+            <option value="">All Tracks</option>
+            {tracks.filter((track) => !selectedRound || rounds.find((round) => round.id === selectedRound)?.trackId === track.id)
+              .map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
           </Form.Select>
         </div>
         <div className="table-responsive">
@@ -137,7 +164,8 @@ const ScoringAnalytics = () => {
           )}
         </div>
       </Card>
-    </div>
+    </div>}
+    </>
   );
 };
 

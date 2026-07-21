@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, Badge, Spinner, Alert } from 'react-bootstrap';
-import { Calendar, Users, Upload, Clock, Activity, Award, Star, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Users, Upload, Activity, AlertTriangle } from 'lucide-react';
 import { getEvents, getTeams, getSubmissions } from '../../api/hackathonApi';
-
-const listOf = (data) => data?.content || data || [];
+import {
+  coordinatorDashboardMetrics,
+  loadCoordinatorDashboardData,
+} from './coordinatorDashboardData';
 
 const CoordinatorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [teamsError, setTeamsError] = useState('');
+  const [submissionsError, setSubmissionsError] = useState('');
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -18,15 +22,15 @@ const CoordinatorDashboard = () => {
       try {
         setLoading(true);
         setError('');
-        const [ev, tm, sub] = await Promise.all([
-          getEvents({ size: 100 }),
-          getTeams({ size: 100 }),
-          getSubmissions({ size: 100 }),
-        ]);
+        setTeamsError('');
+        setSubmissionsError('');
+        const data = await loadCoordinatorDashboardData({ getEvents, getTeams, getSubmissions });
         if (!active) return;
-        setEvents(listOf(ev));
-        setTeams(listOf(tm));
-        setSubmissions(listOf(sub));
+        setEvents(data.events);
+        setTeams(data.teams);
+        setSubmissions(data.submissions);
+        setTeamsError(data.teamsError);
+        setSubmissionsError(data.submissionsError);
       } catch (err) {
         if (active) setError(err.message || 'Failed to load dashboard');
       } finally {
@@ -36,16 +40,16 @@ const CoordinatorDashboard = () => {
     return () => { active = false; };
   }, []);
 
-  const activeEvents = events.filter((e) => (e.status || '').toLowerCase() === 'active');
-  const disqualifiedTeams = teams.filter((t) => (t.status || '').toLowerCase() === 'disqualified');
-  const activeEventName = activeEvents[0]?.title || events[0]?.title || 'the platform';
+  const metrics = coordinatorDashboardMetrics({ events, teams, submissions, teamsError, submissionsError });
+  const activeEventName = events.find((event) => (event.status || '').toLowerCase() === 'ongoing')?.title
+    || events[0]?.title || 'the platform';
 
   const stats = [
-    { title: 'Total Events', value: String(events.length), icon: Calendar, color: 'primary' },
-    { title: 'Active Events', value: String(activeEvents.length), icon: Activity, color: 'success' },
-    { title: 'Registered Teams', value: String(teams.length), icon: Users, color: 'info' },
-    { title: 'Disqualified Teams', value: String(disqualifiedTeams.length), icon: AlertTriangle, color: 'warning' },
-    { title: 'Submissions', value: String(submissions.length), icon: Upload, color: 'primary' },
+    { title: 'Total Events', value: metrics.totalEvents, icon: Calendar, color: 'primary' },
+    { title: 'Active Events', value: metrics.activeEvents, icon: Activity, color: 'success' },
+    { title: 'Registered Teams', value: metrics.registeredTeams, icon: Users, color: 'info' },
+    { title: 'Disqualified Teams', value: metrics.disqualifiedTeams, icon: AlertTriangle, color: 'warning' },
+    { title: 'Submissions', value: metrics.submissions, icon: Upload, color: 'primary' },
   ];
 
   if (loading) {
@@ -56,9 +60,22 @@ const CoordinatorDashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="py-2">
+        <h1 className="h3 fw-bold mb-4" style={{ color: 'var(--cf-text-primary)' }}>Coordinator Dashboard</h1>
+        <Alert variant="danger">{error}</Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="py-2">
-      {error && <Alert variant="danger">{error}</Alert>}
+      {(teamsError || submissionsError) && (
+        <Alert variant="warning">
+          {[teamsError, submissionsError].filter(Boolean).join(' ')} Other dashboard data remains available.
+        </Alert>
+      )}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Coordinator Dashboard</h1>
@@ -99,7 +116,8 @@ const CoordinatorDashboard = () => {
             <Card.Body className="p-4">
               <h5 className="fw-bold mb-4" style={{ color: 'var(--cf-text-primary)' }}>Recent Teams</h5>
               <div className="d-flex flex-column gap-3">
-                {teams.length === 0 && (
+                {teamsError && <Alert variant="danger" className="mb-0">{teamsError}</Alert>}
+                {!teamsError && teams.length === 0 && (
                   <div className="text-muted small">No teams registered yet.</div>
                 )}
                 {teams.slice(0, 5).map((team) => (
@@ -125,7 +143,8 @@ const CoordinatorDashboard = () => {
             <Card.Body className="p-4">
               <h5 className="fw-bold mb-4" style={{ color: 'var(--cf-text-primary)' }}>Recent Submissions</h5>
               <div className="d-flex flex-column gap-3">
-                {submissions.length === 0 && (
+                {submissionsError && <Alert variant="danger" className="mb-0">{submissionsError}</Alert>}
+                {!submissionsError && submissions.length === 0 && (
                   <div className="text-muted small">No submissions yet.</div>
                 )}
                 {submissions.slice(0, 5).map((sub) => (

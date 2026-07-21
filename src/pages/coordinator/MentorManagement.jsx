@@ -1,14 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Search, Mail, Edit, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUsers } from '../../api/userApi';
 import { getTracks, getTrackMentors } from '../../api/hackathonApi';
+import EventSelector from '../../components/coordinator/EventSelector';
+import { useSearchParams } from 'react-router-dom';
 
 const asArray = (data) => data?.content || data || [];
 
 const MentorManagement = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
+  const trackId = searchParams.get('trackId') || '';
+  const [tracks, setTracks] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,15 +23,14 @@ const MentorManagement = () => {
     try {
       setLoading(true);
       setError('');
-      const [usersRes, tracksRes, tmRes] = await Promise.all([
-        getUsers({ role: 'mentor' }),
-        getTracks({ size: 200 }).catch(() => null),
-        getTrackMentors({ size: 500 }).catch(() => null),
+      const [tracksRes, tmRes] = await Promise.all([
+        getTracks({ eventId, size: 200 }),
+        getTrackMentors({ eventId, ...(trackId ? { trackId } : {}), size: 500 }),
       ]);
-      const users = usersRes.value || [];
-      const tracks = asArray(tracksRes);
+      const scopedTracks = asArray(tracksRes);
+      setTracks(scopedTracks);
       const trackName = {};
-      tracks.forEach((t) => { trackName[t.id] = t.name; });
+      scopedTracks.forEach((t) => { trackName[t.id] = t.name; });
       // derive category (track names) per mentor from track-mentors
       const catByUser = {};
       asArray(tmRes).forEach((tm) => {
@@ -34,14 +38,16 @@ const MentorManagement = () => {
         const name = trackName[tm.trackId] || tm.trackName;
         if (name) list.push(name);
       });
-      setMentors(users.map((u) => ({
-        id: u.id,
-        name: u.fullName || u.email,
-        email: u.email,
-        category: (catByUser[u.id] || []).join(', ') || '—',
-        assignedTeams: catByUser[u.id] || [],
-        status: u.status === 'approved' ? 'Active' : 'Inactive',
-      })));
+      const byUser = new Map();
+      asArray(tmRes).forEach((tm) => byUser.set(tm.userId, {
+        id: tm.userId,
+        name: tm.fullName || tm.email,
+        email: tm.email,
+        category: (catByUser[tm.userId] || []).join(', ') || '—',
+        assignedTeams: catByUser[tm.userId] || [],
+        status: 'Active',
+      }));
+      setMentors([...byUser.values()]);
     } catch (err) {
       setError(err.message || 'Failed to load mentors');
     } finally {
@@ -49,7 +55,12 @@ const MentorManagement = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // Synchronize records with the URL-selected scope.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (eventId) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, trackId]);
 
   const filteredMentors = useMemo(() => mentors.filter((mentor) =>
     mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,7 +68,9 @@ const MentorManagement = () => {
   ), [mentors, searchTerm]);
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Mentor Management</h1>
@@ -74,7 +87,7 @@ const MentorManagement = () => {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
+        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
           <InputGroup style={{ maxWidth: '300px' }}>
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
@@ -86,6 +99,14 @@ const MentorManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
+          <Form.Select value={trackId} onChange={(e) => {
+            const next = new URLSearchParams(searchParams);
+            if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
+            setSearchParams(next);
+          }} style={{ maxWidth: 240 }}>
+            <option value="">All Tracks</option>
+            {tracks.map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
+          </Form.Select>
         </div>
         <div className="table-responsive">
           <Table className="mb-0" hover>
@@ -134,7 +155,7 @@ const MentorManagement = () => {
                       variant="link"
                       size="sm"
                       className="p-0 text-success me-3"
-                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/assign`)}
+                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/assign?eventId=${eventId}${trackId ? `&trackId=${trackId}` : ''}`)}
                     >
                       <UserPlus size={16} />
                     </Button>
@@ -142,7 +163,7 @@ const MentorManagement = () => {
                       variant="link"
                       size="sm"
                       className="p-0 text-primary"
-                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/edit`)}
+                      onClick={() => navigate(`/coordinator/mentors/${mentor.id}/edit?eventId=${eventId}`)}
                     >
                       <Edit size={16} />
                     </Button>
@@ -154,7 +175,8 @@ const MentorManagement = () => {
         </div>
       </Card>
 
-    </div>
+    </div>}
+    </>
   );
 };
 

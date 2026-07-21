@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Form, Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
 import { AlertCircle } from 'lucide-react';
 import { getMyTeams, getTrack, getRounds, getSubmissions, upsertSubmission, updateSubmission } from '../../api/hackathonApi';
 import styles from './SubmissionManagement.module.css';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 
 const SubmissionManagement = () => {
   const [loading, setLoading] = useState(true);
@@ -121,6 +122,7 @@ const SubmissionManagement = () => {
 
   return (
     <div className="py-2">
+      <TeamRecognitionBadge recognitions={team?.recognitions} variant="detailed" className="mb-3" />
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Submission Management</h1>
         <div className={styles.pageSubtitle}>

@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, Spinner, Alert, Form, Button } from 'react-bootstrap';
 import { Route as RouteIcon } from 'lucide-react';
 import { getEvents, getEventTimeline } from '../../api/hackathonApi';
-import TeamJourneyTimeline from '../../components/timeline/TeamJourneyTimeline';
+import EventTimelineList from '../../components/timeline/EventTimeline';
+import TimelineFilters from '../../components/timeline/TimelineFilters';
 
 const listOf = (data) => (Array.isArray(data) ? data : data?.content || []);
 
@@ -17,6 +18,7 @@ const EventTimeline = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [filters, setFilters] = useState({});
 
   // Tải sự kiện để chọn.
   useEffect(() => {
@@ -35,12 +37,13 @@ const EventTimeline = () => {
 
   // Tải một trang timeline của sự kiện đang chọn.
   const loadPage = useCallback(async (evId, pageNo, append) => {
-    const data = await getEventTimeline(evId, { page: pageNo, size: 30, sort: 'occurredAt,desc' });
+    const params = Object.fromEntries(Object.entries({ page: pageNo, size: 30, ...filters }).filter(([, value]) => value));
+    const data = await getEventTimeline(evId, params);
     const content = data?.content || [];
     setItems((prev) => (append ? [...prev, ...content] : content));
     // Còn trang nếu chưa phải trang cuối.
     setHasMore(data && data.last === false);
-  }, []);
+  }, [filters]);
 
   // Khi đổi sự kiện: reset và tải trang đầu.
   useEffect(() => {
@@ -102,7 +105,8 @@ const EventTimeline = () => {
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <Card.Body className="p-4">
-          <TeamJourneyTimeline events={items} showTeam />
+          <TimelineFilters value={filters} onChange={setFilters} coordinator />
+          <EventTimelineList items={items} />
           {hasMore && (
             <div className="text-center mt-3">
               <Button variant="outline-secondary" size="sm" onClick={handleLoadMore} disabled={loadingMore}>

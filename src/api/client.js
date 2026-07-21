@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config/registerConfig';
+import { handleUnauthorizedResponse } from '../utils/authSession';
 
 function getAccessToken() {
   return localStorage.getItem('seal_access_token');
@@ -20,7 +21,7 @@ async function request(path, options = {}) {
     headers,
   });
 
-  let data = null;
+  let data;
   try {
     data = await res.json();
   } catch {
@@ -28,10 +29,7 @@ async function request(path, options = {}) {
   }
 
   if (res.status === 401) {
-    localStorage.removeItem('seal_access_token');
-    localStorage.removeItem('seal_refresh_token');
-    localStorage.removeItem('seal_token_type');
-    localStorage.removeItem('seal_user');
+    handleUnauthorizedResponse();
   }
 
   return { ok: res.ok, status: res.status, data };
@@ -73,10 +71,7 @@ export async function apiDownload(path) {
   const res = await fetch(`${API_BASE_URL}${path}`, { headers });
   const text = await res.text();
   if (res.status === 401) {
-    localStorage.removeItem('seal_access_token');
-    localStorage.removeItem('seal_refresh_token');
-    localStorage.removeItem('seal_token_type');
-    localStorage.removeItem('seal_user');
+    handleUnauthorizedResponse();
   }
   return { ok: res.ok, status: res.status, text, headers: res.headers };
 }

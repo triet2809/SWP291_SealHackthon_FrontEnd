@@ -1,4 +1,4 @@
-import { apiDelete, apiDownload, apiGet, apiPatch, apiPost } from './client';
+import { apiDelete, apiDownload, apiGet, apiPatch, apiPost, apiPut } from './client';
 
 export async function getEvents(params = {}) {
   const qs = new URLSearchParams(params).toString();
@@ -222,8 +222,162 @@ export async function reactivateTeam(id) {
   return res.data;
 }
 
-export async function getMentorTeams(mentorId) {
-  const res = await apiGet(`/track-mentors/mentors/${mentorId}/teams`);
+export async function createLogicalRound(payload) {
+  const res = await apiPost('/rounds/logical', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to create logical round');
+  return res.data;
+}
+
+export async function bulkTransferTeams(teamIds, targetTrackId) {
+  const res = await apiPost('/teams/bulk-transfer', { teamIds, targetTrackId });
+  if (!res.ok) throw new Error(res.data?.message || 'Bulk team transfer failed');
+  return res.data;
+}
+
+export async function previewBalancedTeams(eventId, targetTrackIds, randomSeed = null) {
+  const res = await apiPost(`/teams/events/${eventId}/balance-preview`, { targetTrackIds, randomSeed });
+  if (!res.ok) throw new Error(res.data?.message || 'Balance preview failed');
+  return res.data;
+}
+
+export async function applyBalancedTeams(eventId, targetTrackIds, randomSeed = null) {
+  const res = await apiPost(`/teams/events/${eventId}/balance-apply`, { targetTrackIds, randomSeed });
+  if (!res.ok) throw new Error(res.data?.message || 'Balanced distribution failed');
+  return res.data;
+}
+
+export async function getMyTeamProfiles(targetEventId) {
+  const qs = targetEventId ? `?${new URLSearchParams({ targetEventId })}` : '';
+  const res = await apiGet(`/team-profiles/mine${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load previous teams');
+  return res.data;
+}
+
+export async function previewTeamReactivation(profileId, payload) {
+  const res = await apiPost(`/team-profiles/${profileId}/reactivation-preview`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to preview team reactivation');
+  return res.data;
+}
+
+export async function reactivateTeamProfile(profileId, payload) {
+  const res = await apiPost(`/team-profiles/${profileId}/reactivate`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to reactivate previous team');
+  return res.data;
+}
+
+export async function finalizeEventResults(eventId) {
+  const res = await apiPost(`/events/${eventId}/finalize-results`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to finalize event results');
+  return res.data;
+}
+
+export async function getSeedCandidates(eventId, trackId) {
+  const qs = trackId ? `?${new URLSearchParams({ trackId })}` : '';
+  const res = await apiGet(`/events/${eventId}/seed-candidates${qs}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load seed candidates');
+  return res.data;
+}
+
+export async function getEventSeeds(eventId) {
+  const res = await apiGet(`/events/${eventId}/seeds`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load seed assignments');
+  return res.data;
+}
+
+export async function setEventSeed(eventId, teamId, payload) {
+  const res = await apiPut(`/events/${eventId}/teams/${teamId}/seed`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to save seed decision');
+  return res.data;
+}
+
+export async function removeEventSeed(eventId, teamId) {
+  const res = await apiDelete(`/events/${eventId}/teams/${teamId}/seed`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to remove seed decision');
+}
+
+export async function recalculateTeamRecognitions(profileId) {
+  const res = await apiPost(`/team-profiles/${profileId}/recognitions/recalculate`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to recalculate team recognition');
+  return res.data;
+}
+
+export async function getTeamRecognitionEvidence(profileId) {
+  const res = await apiGet(`/team-profiles/${profileId}/recognitions/evidence`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load recognition evidence');
+  return res.data;
+}
+
+export async function revokeTeamRecognition(profileId, recognitionId, reason) {
+  const res = await apiPost(
+    `/team-profiles/${profileId}/recognitions/${recognitionId}/revoke`,
+    { reason },
+  );
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to revoke team recognition');
+  return res.data;
+}
+
+export async function restoreTeamRecognition(profileId, recognitionId) {
+  const res = await apiPost(
+    `/team-profiles/${profileId}/recognitions/${recognitionId}/restore`,
+    {},
+  );
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to restore team recognition');
+  return res.data;
+}
+
+export async function getMentorTeams(mentorId, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/track-mentors/mentors/${mentorId}/teams${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load mentor teams');
+  return res.data;
+}
+
+export async function getEventStaff(eventId) {
+  const res = await apiGet(`/events/${eventId}/staff`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load event staff');
+  return res.data;
+}
+
+export async function inviteEventStaff(eventId, payload) {
+  const res = await apiPost(`/events/${eventId}/staff/invite`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to invite staff');
+  return res.data;
+}
+
+export async function updateEventStaff(eventId, userId, payload) {
+  const res = await apiPut(`/events/${eventId}/staff/${userId}/assignments`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to update staff assignments');
+  return res.data;
+}
+
+export async function removeEventStaff(eventId, userId, assignmentType) {
+  const res = await apiDelete(`/events/${eventId}/staff/${userId}/assignments/${assignmentType}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to remove staff assignment');
+  return res.data;
+}
+
+export async function getCases(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/cases${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load cases');
+  return res.data;
+}
+
+export async function createCase(payload) {
+  const res = await apiPost('/cases', payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to create case');
+  return res.data;
+}
+
+export async function updateCaseStatus(id, payload) {
+  const res = await apiPatch(`/cases/${id}/status`, payload);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to update case');
+  return res.data;
+}
+
+export async function getMyMentorTeams(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/track-mentors/me/teams${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load mentor teams');
   return res.data;
 }
@@ -337,8 +491,9 @@ export async function createCriteriaTemplate(payload) {
   return res.data;
 }
 
-export async function getJudgeSubmissions(judgeId) {
-  const res = await apiGet(`/round-judges/judges/${judgeId}/submissions`);
+export async function getJudgeSubmissions(judgeId, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/round-judges/judges/${judgeId}/submissions${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load judge submissions');
   return res.data;
 }
@@ -423,8 +578,9 @@ export async function addIncidentAction(id, payload) {
   return res.data;
 }
 
-export async function getJudgeVariance(roundId) {
-  const res = await apiGet(`/reports/rounds/${roundId}/judge-variance`);
+export async function getJudgeVariance(eventId, roundId, trackId) {
+  const qs = new URLSearchParams({ eventId, ...(trackId ? { trackId } : {}) }).toString();
+  const res = await apiGet(`/reports/rounds/${roundId}/judge-variance?${qs}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load judge variance');
   return res.data;
 }
@@ -570,7 +726,19 @@ export async function getSupportTickets(requesterId) {
 
 export async function updateSupportTicketStatus(id, status) {
   const res = await apiPatch(`/support-tickets/${id}/status`, { status });
-  if (!res.ok) throw new Error(res.data?.message || 'Failed to update ticket status');
+  if (!res.ok) {
+    const message = res.status === 400
+      ? res.data?.message || 'That status transition is not allowed. Refresh the ticket list and try again.'
+      : res.data?.message || 'Failed to update ticket status';
+    throw new Error(message);
+  }
+  return res.data;
+}
+
+export async function getMyJudgeSubmissions(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/round-judges/me/submissions${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load judge submissions');
   return res.data;
 }
 
@@ -582,23 +750,26 @@ export async function updateSupportTicketStatus(id, status) {
 
 // Lấy timeline của (các) đội mà user hiện tại đang tham gia. eventId là tùy chọn để lọc theo sự kiện.
 export async function getMyTeamTimeline(eventId) {
+  const teams = await getMyTeams();
+  const team = Array.isArray(teams) ? teams[0] : teams?.content?.[0];
+  if (!team?.id) return [];
   const qs = eventId ? `?eventId=${encodeURIComponent(eventId)}` : '';
-  const res = await apiGet(`/team-timeline/my-team${qs}`);
+  const res = await apiGet(`/teams/${team.id}/timeline${qs}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load team timeline');
-  return res.data;
+  return res.data?.content || res.data || [];
 }
 
 // Lấy timeline của một đội cụ thể (EC xem mọi đội; thí sinh chỉ xem đội mình).
 export async function getTeamTimeline(teamId) {
-  const res = await apiGet(`/team-timeline/teams/${teamId}`);
+  const res = await apiGet(`/teams/${teamId}/timeline`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load team timeline');
-  return res.data;
+  return res.data?.content || res.data || [];
 }
 
 // EC xem toàn bộ mốc của mọi đội trong một sự kiện (có phân trang).
 export async function getEventTimeline(eventId, params = {}) {
-  const qs = new URLSearchParams({ eventId, ...params }).toString();
-  const res = await apiGet(`/team-timeline?${qs}`);
+  const qs = new URLSearchParams(params).toString();
+  const res = await apiGet(`/events/${eventId}/timeline${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load event timeline');
   return res.data;
 }
@@ -611,8 +782,8 @@ export async function getEventTimeline(eventId, params = {}) {
 // ============================================================================
 
 // EC công bố kết quả vòng thi và mở cửa sổ khiếu nại 15 phút.
-export async function publishRoundResults(roundId) {
-  const res = await apiPost(`/appeals/rounds/${roundId}/publish-results`, {});
+export async function publishRoundResults(eventId, roundId) {
+  const res = await apiPost(`/events/${eventId}/rounds/${roundId}/publish-results`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to publish round results');
   return res.data;
 }
@@ -657,6 +828,18 @@ export async function respondToAppeal(id, response) {
 export async function resolveAppeal(id, payload) {
   const res = await apiPost(`/appeals/${id}/resolve`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to resolve appeal');
+  return res.data;
+}
+
+export async function resumeRound(eventId, roundId) {
+  const res = await apiPost(`/events/${eventId}/rounds/${roundId}/resume`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Round is not ready to resume');
+  return res.data;
+}
+
+export async function advanceRound(eventId, roundId) {
+  const res = await apiPost(`/events/${eventId}/rounds/${roundId}/advance`, {});
+  if (!res.ok) throw new Error(res.data?.message || 'Round is not ready to advance');
   return res.data;
 }
 

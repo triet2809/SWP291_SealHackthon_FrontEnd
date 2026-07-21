@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Search, Download, Eye } from 'lucide-react';
 import { getSubmissions, getRounds } from '../../api/hackathonApi';
 import { useNavigate } from 'react-router-dom';
+import EventSelector from '../../components/coordinator/EventSelector';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
+import { useSearchParams } from 'react-router-dom';
 
 const asArray = (data) => data?.content || data || [];
 
@@ -16,6 +19,8 @@ const reviewLabel = (s) => {
 
 const SubmissionManagement = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
   const [searchTerm, setSearchTerm] = useState('');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
   const [submissions, setSubmissions] = useState([]);
@@ -28,8 +33,8 @@ const SubmissionManagement = () => {
     (async () => {
       try {
         const [subs, rds] = await Promise.all([
-          getSubmissions({ size: 200 }),
-          getRounds({ size: 200 }).catch(() => null),
+          getSubmissions({ eventId, size: 200 }),
+          getRounds({ eventId, size: 200 }).catch(() => null),
         ]);
         if (!active) return;
         setSubmissions(asArray(subs));
@@ -41,7 +46,7 @@ const SubmissionManagement = () => {
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [eventId]);
 
   const roundName = useMemo(() => {
     const map = {};
@@ -83,7 +88,9 @@ const SubmissionManagement = () => {
   };
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Submission Management</h1>
@@ -137,7 +144,10 @@ const SubmissionManagement = () => {
                 const reviewed = label === 'Reviewed';
                 return (
                 <tr key={sub.id}>
-                  <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>{sub.teamName || '—'}</td>
+                  <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>
+                    <span className="me-2">{sub.teamName || '—'}</span>
+                    <TeamRecognitionBadge recognitions={sub.recognitions} />
+                  </td>
                   <td className="py-3">{sub.projectName || '—'}</td>
                   <td className="py-3">{sub.version ? <Badge bg="secondary">{sub.version}</Badge> : '—'}</td>
                   <td className="py-3">
@@ -169,7 +179,8 @@ const SubmissionManagement = () => {
           </Table>
         </div>
       </Card>
-    </div>
+    </div>}
+    </>
   );
 };
 

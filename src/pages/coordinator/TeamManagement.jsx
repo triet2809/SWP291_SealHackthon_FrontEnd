@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert, Modal } from 'react-bootstrap';
 import { Search, Eye, Ban, RotateCcw, Plus, Shuffle } from 'lucide-react';
-import { getTeams, getTracks, getSubmissions, disqualifyTeam, reactivateTeam, moveTeamTrack } from '../../api/hackathonApi';
+import { getTeams, getTracks, getSubmissions, disqualifyTeam, reactivateTeam, moveTeamTrack, bulkTransferTeams, previewBalancedTeams, applyBalancedTeams } from '../../api/hackathonApi';
 import { useNavigate } from 'react-router-dom';
 import { getInitials } from '../../utils/authUser';
+import EventSelector from '../../components/coordinator/EventSelector';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
+import { useSearchParams } from 'react-router-dom';
 
 const listOf = (data) => data?.content || data || [];
 
 const TeamManagement = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -22,6 +27,12 @@ const TeamManagement = () => {
   const [moveTeam, setMoveTeam] = useState(null);
   const [moveTargetTrack, setMoveTargetTrack] = useState('');
   const [moving, setMoving] = useState(false);
+  const [selectedTeamIds, setSelectedTeamIds] = useState([]);
+  const [bulkTarget, setBulkTarget] = useState('');
+  const [balanceOpen, setBalanceOpen] = useState(false);
+  const [balanceTracks, setBalanceTracks] = useState([]);
+  const [balanceSeed, setBalanceSeed] = useState('');
+  const [balancePreview, setBalancePreview] = useState(null);
 
   const trackName = (trackId) => tracks.find((t) => t.id === trackId)?.name || 'Unassigned';
   // Project = team's submission projectName if available, else team name.
@@ -32,9 +43,9 @@ const TeamManagement = () => {
       setLoading(true);
       setError('');
       const [tm, tk, sb] = await Promise.all([
-        getTeams({ size: 100 }),
-        getTracks({ size: 100 }),
-        getSubmissions({ size: 200 }).catch(() => null),
+        getTeams({ eventId, size: 100 }),
+        getTracks({ eventId, size: 100 }),
+        getSubmissions({ eventId, size: 200 }).catch(() => null),
       ]);
       setTeams(listOf(tm));
       setTracks(listOf(tk));
@@ -53,8 +64,12 @@ const TeamManagement = () => {
   };
 
   useEffect(() => {
+    // The loader synchronizes the page with the URL-selected event.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeams();
-  }, []);
+  // loadTeams is intentionally recreated with the current event id.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
 
   const handleDisqualifyTeam = async (id) => {
     const reason = window.prompt('Disqualify this team? Enter a reason:');
@@ -106,6 +121,35 @@ const TeamManagement = () => {
     }
   };
 
+  const handleBulkTransfer = async () => {
+    if (!selectedTeamIds.length || !bulkTarget) return;
+    try {
+      setMoving(true); setError('');
+      await bulkTransferTeams(selectedTeamIds, bulkTarget);
+      setSelectedTeamIds([]); setBulkTarget('');
+      await loadTeams();
+    } catch (err) { setError(err.message || 'Bulk transfer failed'); }
+    finally { setMoving(false); }
+  };
+
+  const runBalancePreview = async () => {
+    try {
+      setMoving(true); setError('');
+      setBalancePreview(await previewBalancedTeams(eventId, balanceTracks,
+        balanceSeed === '' ? null : Number(balanceSeed)));
+    } catch (err) { setError(err.message || 'Balance preview failed'); }
+    finally { setMoving(false); }
+  };
+
+  const runBalanceApply = async () => {
+    try {
+      setMoving(true); setError('');
+      await applyBalancedTeams(eventId, balanceTracks, balanceSeed === '' ? null : Number(balanceSeed));
+      setBalanceOpen(false); setBalancePreview(null); await loadTeams();
+    } catch (err) { setError(err.message || 'Balanced distribution failed'); }
+    finally { setMoving(false); }
+  };
+
   const filteredTeams = teams.filter((team) => {
     const matchesSearch = (team.name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
@@ -116,13 +160,16 @@ const TeamManagement = () => {
   });
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Team Management</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>View and manage registered teams</div>
         </div>
         <div className="d-flex gap-2">
+          <Button variant="outline-primary" onClick={() => setBalanceOpen(true)}><Shuffle size={18} /> Balance tracks</Button>
           <Button 
             variant="primary" 
             className="d-flex align-items-center gap-2"
@@ -144,6 +191,11 @@ const TeamManagement = () => {
             <Form.Control className="border-start-0" placeholder="Search teams..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </InputGroup>
           <div className="d-flex gap-2">
+            <Form.Select style={{ width: 190 }} value={bulkTarget} onChange={(e) => setBulkTarget(e.target.value)}>
+              <option value="">Bulk target track…</option>
+              {tracks.map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
+            </Form.Select>
+            <Button variant="outline-primary" disabled={!selectedTeamIds.length || !bulkTarget || moving} onClick={handleBulkTransfer}>Move selected</Button>
             <Form.Select style={{ width: '160px' }} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option>All Categories</option>
               {tracks.map((t) => <option key={t.id}>{t.name}</option>)}
@@ -159,6 +211,7 @@ const TeamManagement = () => {
           <Table className="mb-0" hover>
             <thead>
               <tr>
+                <th><Form.Check checked={filteredTeams.length > 0 && filteredTeams.every((team) => selectedTeamIds.includes(team.id))} onChange={(e) => setSelectedTeamIds(e.target.checked ? filteredTeams.map((team) => team.id) : [])} /></th>
                 <th className="border-top-0 border-bottom">Team Name</th>
                 <th className="border-top-0 border-bottom">Project</th>
                 <th className="border-top-0 border-bottom">Category</th>
@@ -170,19 +223,21 @@ const TeamManagement = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-4"><Spinner animation="border" variant="primary" size="sm" /></td></tr>
+                <tr><td colSpan={8} className="text-center py-4"><Spinner animation="border" variant="primary" size="sm" /></td></tr>
               ) : filteredTeams.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-4 text-muted">No teams found.</td></tr>
+                <tr><td colSpan={8} className="text-center py-4 text-muted">No teams found.</td></tr>
               ) : filteredTeams.map((team) => {
                 const disqualified = (team.status || '').toLowerCase() === 'disqualified';
                 return (
                   <tr key={team.id}>
+                    <td><Form.Check checked={selectedTeamIds.includes(team.id)} onChange={() => setSelectedTeamIds((current) => current.includes(team.id) ? current.filter((id) => id !== team.id) : [...current, team.id])} /></td>
                     <td className="fw-medium py-3">
                       <div className="d-flex align-items-center gap-2">
                         <div className="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
                           {getInitials(team.name)}
                         </div>
                         <span style={{ color: 'var(--cf-text-primary)' }}>{team.name}</span>
+                        <TeamRecognitionBadge recognitions={team.recognitions} />
                       </div>
                     </td>
                     <td className="py-3" style={{ color: 'var(--cf-text-primary)' }}>{projectName(team)}</td>
@@ -249,7 +304,24 @@ const TeamManagement = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+      <Modal show={balanceOpen} onHide={() => setBalanceOpen(false)} size="lg" centered>
+        <Modal.Header closeButton><Modal.Title>Balanced team distribution</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <Form.Label>Target tracks</Form.Label>
+          <div className="d-flex flex-wrap gap-3 mb-3">{tracks.map((track) => <Form.Check key={track.id} type="checkbox" label={track.name} checked={balanceTracks.includes(track.id)} onChange={() => setBalanceTracks((current) => current.includes(track.id) ? current.filter((id) => id !== track.id) : [...current, track.id])} />)}</div>
+          <Form.Group className="mb-3"><Form.Label>Optional deterministic seed</Form.Label><Form.Control type="number" value={balanceSeed} onChange={(e) => setBalanceSeed(e.target.value)} /></Form.Group>
+          <Button onClick={runBalancePreview} disabled={!balanceTracks.length || moving}>Preview</Button>
+          {balancePreview && <div className="mt-3">
+            <h6>Counts</h6>
+            <ul>{balancePreview.counts?.map((count) => <li key={count.trackId}>{count.trackName}: {count.beforeCount} → {count.afterCount}</li>)}</ul>
+            <p>{balancePreview.moves?.filter((move) => move.currentTrackId !== move.proposedTrackId).length || 0} teams will move.</p>
+            {!!balancePreview.excluded?.length && <Alert variant="warning">{balancePreview.excluded.map((item) => `${item.teamName}: ${item.reason}`).join('; ')}</Alert>}
+          </div>}
+        </Modal.Body>
+        <Modal.Footer><Button variant="secondary" onClick={() => setBalanceOpen(false)}>Cancel</Button><Button onClick={runBalanceApply} disabled={!balancePreview || moving}>Apply distribution</Button></Modal.Footer>
+      </Modal>
+    </div>}
+    </>
   );
 };
 

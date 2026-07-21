@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Table, Badge, Spinner, Alert, Form, Button } from 'react-bootstrap';
+import { useEffect, useMemo, useState } from 'react';
+import { Card, Table, Badge, Spinner, Alert, Form } from 'react-bootstrap';
 import { LifeBuoy, Inbox } from 'lucide-react';
 import { getSupportTickets, updateSupportTicketStatus, markAllNotificationsRead } from '../../api/hackathonApi';
 
@@ -14,10 +14,18 @@ const STATUS_OPTIONS = [
   { value: 'open', label: 'Open', variant: 'secondary' },
   { value: 'in_progress', label: 'In progress', variant: 'info' },
   { value: 'resolved', label: 'Resolved', variant: 'success' },
-  { value: 'closed', label: 'Closed', variant: 'dark' },
 ];
-const STATUS_MAP = Object.fromEntries(STATUS_OPTIONS.map((s) => [s.value, s]));
+const ALLOWED_STATUS_TRANSITIONS = {
+  open: ['in_progress'],
+  in_progress: ['open', 'resolved'],
+  resolved: ['open'],
+};
 const PRIORITY_VARIANT = { low: 'light', medium: 'warning', high: 'danger' };
+
+const statusOptionsFor = (currentStatus) => {
+  const allowed = new Set([currentStatus, ...(ALLOWED_STATUS_TRANSITIONS[currentStatus] || [])]);
+  return STATUS_OPTIONS.filter((status) => allowed.has(status.value));
+};
 
 const SupportTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -40,7 +48,12 @@ const SupportTickets = () => {
     }
   };
 
-  useEffect(() => { load(); markAllNotificationsRead('support').catch(() => {}); }, []);
+  useEffect(() => {
+    // The initial request intentionally populates component state after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+    markAllNotificationsRead('support').catch(() => {});
+  }, []);
 
   const handleStatusChange = async (ticket, status) => {
     setUpdating((prev) => ({ ...prev, [ticket.id]: true }));
@@ -126,7 +139,9 @@ const SupportTickets = () => {
                           disabled={!!updating[t.id]}
                           onChange={(e) => handleStatusChange(t, e.target.value)}
                         >
-                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          {statusOptionsFor(t.status).map((s) => (
+                            <option key={s.value} value={s.value}>{s.label}</option>
+                          ))}
                         </Form.Select>
                       </td>
                     </tr>

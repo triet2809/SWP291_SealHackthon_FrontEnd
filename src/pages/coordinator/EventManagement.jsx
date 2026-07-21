@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, Spinner, Alert } from 'react-bootstrap';
 import { Plus, Edit, Settings, Trash2, Eye, Play, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -38,8 +38,6 @@ const EventManagement = () => {
   const [setupBusy, setSetupBusy] = useState(false);
   const [setupResult, setSetupResult] = useState(null);
   const [tracksText, setTracksText] = useState('');
-  const [finalistCount, setFinalistCount] = useState('');
-  const [roundCount, setRoundCount] = useState('');
 
   const loadEvents = async () => {
     try {
@@ -149,24 +147,42 @@ const EventManagement = () => {
   const openSetup = (event) => {
     setSetupEvent(event);
     setSetupResult(null);
-    setTracksText('');
-    setFinalistCount('');
-    setRoundCount('');
+    setTracksText('Qualifier | General, Track B | 3\nFinal | Final Stage | 1');
   };
 
   const handleSetupCompetition = async () => {
     try {
       setSetupBusy(true);
       setError('');
-      const tracks = tracksText
+      const lines = tracksText
         .split('\n')
         .map((line) => line.trim())
-        .filter(Boolean)
-        .map((name) => ({ name, description: '' }));
-      const payload = {};
-      if (tracks.length > 0) payload.tracks = tracks;
-      if (finalistCount) payload.finalistCount = Number(finalistCount);
-      if (roundCount) payload.roundCount = Number(roundCount);
+        .filter(Boolean);
+      if (lines.length === 0) throw new Error('Add at least one logical round');
+      const roundPlan = lines.map((line, index) => {
+        const [namePart, tracksPart, promotePart] = line.split('|').map((part) => part?.trim());
+        const trackNames = (tracksPart || '').split(',').map((name) => name.trim()).filter(Boolean);
+        const promotionCount = Number(promotePart);
+        if (!namePart || trackNames.length === 0 || !Number.isInteger(promotionCount) || promotionCount < 1) {
+          throw new Error(`Invalid round plan line ${index + 1}; use: Round name | Track A, Track B | 3`);
+        }
+        const finalRound = index === lines.length - 1;
+        if (finalRound && trackNames.length !== 1) {
+          throw new Error('The last (final) logical round must contain exactly one track');
+        }
+        return {
+          name: namePart,
+          sequenceNumber: index + 1,
+          finalRound,
+          defaultTopNToPromote: promotionCount,
+          tracks: trackNames.map((name) => ({
+            name,
+            description: '',
+            topNToPromote: promotionCount,
+          })),
+        };
+      });
+      const payload = { roundPlan };
       const result = await setupCompetition(setupEvent.id, payload);
       setSetupResult(result);
       await loadEvents();
@@ -447,44 +463,24 @@ const EventManagement = () => {
             <>
               <p className="text-muted" style={{ fontSize: '0.9rem' }}>
                 Registration is closed with <strong>{setupEvent?.participantsCount ?? 0}</strong> team(s).
-                This builds the tracks and elimination rounds, distributes teams across tracks,
-                and seeds round 1 with every team. This can only be run once.
+                Define the event&apos;s ordered logical rounds and each round&apos;s independent
+                track structure. Teams are seeded only into Round 1; later assignments happen
+                after promotion. This can only be run once.
               </p>
               <Form.Group className="mb-3">
-                <Form.Label>Tracks (one per line)</Form.Label>
+                <Form.Label>Logical round plan (one round per line)</Form.Label>
                 <Form.Control
                   as="textarea"
-                  rows={3}
-                  placeholder={'Leave empty for a single "General" track.\ne.g.\nAI\nWeb\nFintech'}
+                  rows={5}
+                  placeholder={'Qualifier | AI, Web, Fintech | 3\nSemifinal | Group A, Group B | 2\nFinal | Final Stage | 1'}
                   value={tracksText}
                   onChange={(e) => setTracksText(e.target.value)}
                 />
-                <Form.Text muted>Teams are distributed evenly across the tracks you list.</Form.Text>
+                <Form.Text muted>
+                  Format: round name | comma-separated round-specific tracks | promotion count.
+                  The last line is the final and must have one track. Track names must be unique across lines.
+                </Form.Text>
               </Form.Group>
-              <div className="row">
-                <div className="col-md-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Finalists per track</Form.Label>
-                    <Form.Control
-                      type="number" min={1}
-                      placeholder="auto (10% of teams, min 3)"
-                      value={finalistCount}
-                      onChange={(e) => setFinalistCount(e.target.value)}
-                    />
-                  </Form.Group>
-                </div>
-                <div className="col-md-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Number of rounds</Form.Label>
-                    <Form.Control
-                      type="number" min={1}
-                      placeholder="auto (by team count)"
-                      value={roundCount}
-                      onChange={(e) => setRoundCount(e.target.value)}
-                    />
-                  </Form.Group>
-                </div>
-              </div>
             </>
           ) : (
             <div>

@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
-import { Trophy, Eye, Search, RefreshCw, Send } from 'lucide-react';
+import { Eye, Search, RefreshCw, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getRounds, getRoundRankings, recalculateRoundRankings, publishRoundResults } from '../../api/hackathonApi';
+import { getRounds, getRoundRankings, getTracks, recalculateRoundRankings, publishRoundResults } from '../../api/hackathonApi';
+import EventSelector from '../../components/coordinator/EventSelector';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
+import { useSearchParams } from 'react-router-dom';
 
 const statusVariant = (status) => {
   const s = (status || '').toLowerCase();
@@ -13,8 +16,12 @@ const statusVariant = (status) => {
 
 const RankingManagement = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId') || '';
+  const selectedRound = searchParams.get('roundId') || '';
+  const trackId = searchParams.get('trackId') || '';
   const [rounds, setRounds] = useState([]);
-  const [selectedRound, setSelectedRound] = useState('');
+  const [tracks, setTracks] = useState([]);
   const [rankings, setRankings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,33 +34,38 @@ const RankingManagement = () => {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getRounds({ size: 100 });
+        const [data, trackData] = await Promise.all([getRounds({ eventId, size: 100 }), getTracks({ eventId, size: 100 })]);
         const list = data.content || data || [];
         setRounds(list);
-        if (list.length) setSelectedRound(list[0].id);
+        setTracks(trackData.content || trackData || []);
+        if (list.length && !selectedRound) {
+          const next = new URLSearchParams(searchParams); next.set('roundId', list[0].id); setSearchParams(next);
+        }
         else setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
       }
     })();
-  }, []);
+  }, [eventId, selectedRound, searchParams, setSearchParams]);
 
   const loadRankings = useCallback(async (roundId) => {
     if (!roundId) return;
     setLoading(true);
     setError('');
     try {
-      const data = await getRoundRankings({ roundId });
+      const data = await getRoundRankings({ eventId, roundId, ...(trackId ? { trackId } : {}) });
       setRankings(data.content || data || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eventId, trackId]);
 
   useEffect(() => {
+    // Refresh rankings when the URL-selected round changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedRound) loadRankings(selectedRound);
   }, [selectedRound, loadRankings]);
 
@@ -88,9 +100,8 @@ const RankingManagement = () => {
     setError('');
     setNotice('');
     try {
-      const round = await publishRoundResults(selectedRound);
-      const deadline = round?.appealDeadline ? new Date(round.appealDeadline).toLocaleTimeString() : '15 minutes';
-      setNotice(`Results published. Appeal window is open until ${deadline}.`);
+      const round = await publishRoundResults(eventId, selectedRound);
+      setNotice(`Results published at ${round?.resultPublishedAt || 'now'}.`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -99,7 +110,9 @@ const RankingManagement = () => {
   };
 
   return (
-    <div className="py-2">
+    <>
+    <EventSelector />
+    {eventId && <div className="py-2">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Ranking Management</h1>
@@ -128,11 +141,22 @@ const RankingManagement = () => {
             <Form.Control placeholder="Search team..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </InputGroup>
           <div className="d-flex gap-2">
-            <Form.Select style={{ width: '220px' }} value={selectedRound} onChange={(e) => setSelectedRound(e.target.value)}>
+            <Form.Select style={{ width: '220px' }} value={selectedRound} onChange={(e) => {
+              const next = new URLSearchParams(searchParams); next.set('roundId', e.target.value); next.delete('trackId'); setSearchParams(next);
+            }}>
               {rounds.length === 0 && <option value="">No rounds available</option>}
               {rounds.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
+            </Form.Select>
+            <Form.Select style={{ width: 190 }} value={trackId} onChange={(e) => {
+              const next = new URLSearchParams(searchParams);
+              if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
+              setSearchParams(next);
+            }}>
+              <option value="">All Tracks</option>
+              {tracks.filter((track) => !selectedRound || rounds.find((round) => round.id === selectedRound)?.trackId === track.id)
+                .map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
             </Form.Select>
             <Form.Select
               style={{ width: '180px' }}
@@ -155,27 +179,34 @@ const RankingManagement = () => {
                 <tr>
                   <th className="border-top-0 border-bottom">Rank</th>
                   <th className="border-top-0 border-bottom">Team Name</th>
+                  <th className="border-top-0 border-bottom">Track</th>
                   <th className="border-top-0 border-bottom">Final Score</th>
                   <th className="border-top-0 border-bottom">Advancement Status</th>
+                  <th className="border-top-0 border-bottom">Publication</th>
                   <th className="border-top-0 border-bottom text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRankings.length === 0 && (
-                  <tr><td colSpan={5} className="text-center text-muted py-4">No rankings. Recalculate to generate.</td></tr>
+                  <tr><td colSpan={7} className="text-center text-muted py-4">No rankings. Recalculate to generate.</td></tr>
                 )}
                 {filteredRankings.map((team) => (
                   <tr key={team.id || team.teamId}>
                     <td className="fw-bold py-3" style={{ color: team.rank <= 3 ? 'var(--cf-status-warning)' : 'var(--cf-text-secondary)' }}>
                       #{team.rank}
                     </td>
-                    <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>{team.teamName}</td>
-                    <td className="py-3 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>{Number(team.totalScore ?? 0).toFixed(1)}</td>
+                    <td className="fw-medium py-3" style={{ color: 'var(--cf-text-primary)' }}>
+                      <span className="me-2">{team.teamName}</span>
+                      <TeamRecognitionBadge recognitions={team.recognitions} />
+                    </td>
+                    <td>{team.trackName || '—'}</td>
+                    <td className="py-3 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>{team.totalScore == null ? 'Unscored' : Number(team.totalScore).toFixed(1)}</td>
                     <td className="py-3">
                       <Badge bg={statusVariant(team.status)} text={statusVariant(team.status) === 'warning' ? 'dark' : 'light'}>
                         {team.status}
                       </Badge>
                     </td>
+                    <td><Badge bg={team.resultPublishedAt ? 'success' : 'secondary'}>{team.resultPublishedAt ? 'Published' : 'Unpublished'}</Badge></td>
                     <td className="py-3 text-end">
                       <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/ranking/${team.teamId}?roundId=${selectedRound}`)}>
                         <Eye size={16} />
@@ -188,7 +219,8 @@ const RankingManagement = () => {
           )}
         </div>
       </Card>
-    </div>
+    </div>}
+    </>
   );
 };
 

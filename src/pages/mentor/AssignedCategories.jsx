@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Shield, Tag } from 'lucide-react';
 import { getMentorTeams, getSubmissions } from '../../api/hackathonApi';
@@ -42,7 +42,7 @@ const AssignedCategories = () => {
         const trackList = Array.from(byTrack.values());
         const subResults = await Promise.all(
           trackList.map((tr) =>
-            getSubmissions({ trackId: tr.id, size: 200 }).catch(() => null),
+            getSubmissions({ eventId: tr.eventId, trackId: tr.id, size: 200 }).catch(() => null),
           ),
         );
 

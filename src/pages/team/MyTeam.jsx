@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, ProgressBar, Spinner, Alert, Button, Modal } from 'react-bootstrap';
 import { Code, Globe, FileText, ExternalLink, Key, Copy, Check, LogOut, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMyTeams, getTrack, getSubmissions, leaveTeam, getMentorFeedbacks, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
+import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 import styles from './MyTeam.module.css';
 
 const MyTeam = () => {
@@ -125,6 +126,7 @@ const MyTeam = () => {
         <div className={styles.pageSubtitle}>
           {team.name}{trackName ? ` · ${trackName}` : ''}
         </div>
+        <TeamRecognitionBadge recognitions={team.recognitions} variant="detailed" className="mt-2" />
       </div>
 
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-3">{error}</Alert>}

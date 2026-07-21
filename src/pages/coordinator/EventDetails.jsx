@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Badge, Button, Row, Col, Modal, Form, Spinner, Alert } from 'react-bootstrap';
-import { ArrowLeft, Calendar, Users, Target, Plus, Eye, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Target, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TrackGeneratorModal from '../../components/coordinator/TrackGeneratorModal';
 import {
-  getEvent, getTracks, getRounds, getTeams, createRound, createTrack, updateTrack,
+  getEvent, getTracks, getRounds, getTeams, createLogicalRound, createTrack, updateTrack,
 } from '../../api/hackathonApi';
 
 const listOf = (data) => data?.content || data || [];
@@ -24,7 +24,7 @@ const EventDetails = () => {
 
   const [showRoundModal, setShowRoundModal] = useState(false);
   const [savingRound, setSavingRound] = useState(false);
-  const [newRound, setNewRound] = useState({ name: '', trackId: '', submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
+  const [newRound, setNewRound] = useState({ name: '', trackIds: [], submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
 
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
 
@@ -56,26 +56,28 @@ const EventDetails = () => {
   };
 
   useEffect(() => {
+    // loadAll intentionally synchronizes server state for the selected event.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleSaveRound = async () => {
-    if (!newRound.name || !newRound.trackId || !newRound.submissionDeadline) {
-      alert('Please fill round name, track, and submission deadline');
+    if (!newRound.name || !newRound.trackIds.length || !newRound.submissionDeadline) {
+      alert('Please fill round name, select at least one track, and set the submission deadline');
       return;
     }
     try {
       setSavingRound(true);
       setError('');
-      await createRound({
-        trackId: newRound.trackId,
+      await createLogicalRound({
+        trackIds: newRound.trackIds,
         name: newRound.name,
         sequenceNumber: Number(newRound.sequenceNumber) || 1,
         submissionDeadline: new Date(newRound.submissionDeadline).toISOString().slice(0, 19),
         topNToPromote: Number(newRound.topNToPromote) || 1,
       });
-      setNewRound({ name: '', trackId: '', submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
+      setNewRound({ name: '', trackIds: [], submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
       setShowRoundModal(false);
       await loadAll();
     } catch (err) {
@@ -337,11 +339,17 @@ const EventDetails = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Track</Form.Label>
-              <Form.Select value={newRound.trackId} onChange={(e) => setNewRound({ ...newRound, trackId: e.target.value })}>
-                <option value="">Select track</option>
-                {tracks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </Form.Select>
+              <Form.Label>Tracks</Form.Label>
+              <div className="d-flex flex-wrap gap-3">
+                {tracks.map((track) => <Form.Check key={track.id} type="checkbox" label={track.name}
+                  checked={newRound.trackIds.includes(track.id)}
+                  onChange={() => setNewRound((current) => ({
+                    ...current,
+                    trackIds: current.trackIds.includes(track.id)
+                      ? current.trackIds.filter((id) => id !== track.id)
+                      : [...current.trackIds, track.id],
+                  }))} />)}
+              </div>
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Round Name</Form.Label>
